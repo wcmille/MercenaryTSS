@@ -107,6 +107,8 @@ namespace BMC.MercenaryTSS
             // Called when script is created.
             // This class is instanced per LCD that uses it, which means the same block can have multiple instances of this script aswell (e.g. a cockpit with all its screens set to use this script).
             configit = new ConfigIt(TerminalBlock);
+
+            textSize = Math.Min(mySurface.SurfaceSize.Y / 512.0f, mySurface.SurfaceSize.X/512.0f) * 2.0f;
         }
 
         public override void Dispose()
@@ -121,29 +123,6 @@ namespace BMC.MercenaryTSS
             Dispose();
         }
 
-        //void Draw2() // this is a custom method which is called in Run().
-        //{
-        //    Vector2 screenSize = Surface.SurfaceSize;
-        //    Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
-
-        //    var frame = Surface.DrawFrame();
-
-        //    // Drawing sprites works exactly like in PB API.
-        //    // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
-
-        //    // there are also some helper methods from the MyTSSCommon that this extends.
-        //    // like: AddBackground(frame, Surface.ScriptBackgroundColor); - a grid-textured background
-
-        //    // the colors in the terminal are Surface.ScriptBackgroundColor and Surface.ScriptForegroundColor, the other ones without Script in name are for text/image mode.
-
-        //    var text = MySprite.CreateText("Hi!", "Monospace", Surface.ScriptForegroundColor, 1f, TextAlignment.LEFT);
-        //    text.Position = screenCorner + new Vector2(16, 16); // 16px from topleft corner of the visible surface
-        //    frame.Add(text);
-
-        //    // add more sprites and stuff
-
-        //    frame.Dispose(); // send sprites to the screen
-        //}
 
         void DrawError(Exception e)
         {
@@ -245,7 +224,7 @@ namespace BMC.MercenaryTSS
                 var myViewport = new RectangleF((mySurface.TextureSize - mySurface.SurfaceSize) / 2f, mySurface.SurfaceSize);
                 var myPosition = new Vector2(5, 5) + myViewport.Position;
 
-                textSize = 1.0f;//config.Get("Settings", "TextSize").ToSingle(defaultValue: 1.0f);
+                //textSize = 1.0f;//config.Get("Settings", "TextSize").ToSingle(defaultValue: 1.0f);
                 right = new Vector2(mySurface.SurfaceSize.X - 10, 0);
                 newLine = new Vector2(0, 30 * textSize);
                 myDefinitions = MyDefinitionManager.Static.GetAllDefinitions();
