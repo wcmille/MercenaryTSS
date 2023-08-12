@@ -4,7 +4,8 @@
         <LCDTextureDefinition>
             <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercator" />
             <TexturePath>Textures\Sprites\Kharak.dds</TexturePath>
-            <Selectable>false</Selectable>
+            <SpritePath>Textures\Sprites\Kharak.dds</SpritePath>
+          <Selectable>true</Selectable>
         </LCDTextureDefinition>
     </LCDTextures>
 </Definitions>

@@ -95,10 +95,6 @@ namespace MercenaryTSS
             {
                 Type = SpriteType.TEXTURE,
                 Data = "GVK_KharakMercator",
-                //Data = "Circle",
-                //Position = screenCorner,
-                //Size = screenSize,
-                //Color = Color.White.Alpha(0.66f),
                 Alignment = TextAlignment.CENTER
             };
             // Add the sprite to the frame
@@ -112,10 +108,9 @@ namespace MercenaryTSS
             {
                 Type = SpriteType.TEXTURE,
                 Data = "Circle",
-                //Data = "Circle",
                 Position = pos,
                 Size = new Vector2(16,16),
-                //Color = Color.White.Alpha(0.66f),
+                Color = Color.Blue.Alpha(0.75f),
                 Alignment = TextAlignment.CENTER
             };
             // Add the sprite to the frame
@@ -157,31 +152,5 @@ namespace MercenaryTSS
                     MyAPIGateway.Utilities.ShowNotification($"[ ERROR: {GetType().FullName}: {e.Message} | Send SpaceEngineers.Log to mod author ]", 10000, MyFontEnum.Red);
             }
         }
-
-        //      string gps_string = "GPS:med wreck:31469.36:2860.77:34731.6:#FF75C9F1:";
-        //      string latlon_string = "Lat: S 32.4966330180401: Lon: W 125.378729204909";
-
-        //      var split = gps_string.Split(':');
-        //      Vector3 origin = new Vector3(32768.5f, 32768.5f, 32768.5f);
-        //      Vector3 gps = new Vector3(float.Parse(split[2]), float.Parse(split[3]), float.Parse(split[4]));
-        //      Vector3 abs = gps - origin;
-        //      double lat = Math.Abs(Math.Atan2(Math.Sqrt(abs.X * abs.X + abs.Z * abs.Z), abs.Y) * 180 / Math.PI) - 90;
-        //      double lon = Math.Atan2(abs.Z, abs.X) * 180 / Math.PI;
-
-
-
-        //      split = latlon_string.Split(':');
-        //var lat_split = split[1].Split(' ');
-        //      var theta = (float.Parse(lat_split[2]) * (lat_split[1] == "N" ? -1 : 1) + 90) * Math.PI / 180;
-        //      var lon_split = split[3].Split(' ');
-        //      var phi = (float.Parse(lon_split[2]) * (lon_split[1] == "E" ? -1 : 1)) * Math.PI / 180;
-        //      var rho = 30000;
-        //      var coords = new Vector3((float)(rho * Math.Sin(theta) * Math.Cos(phi)), (float)(-rho * Math.Cos(theta)), -(float)(rho * Math.Sin(theta) * Math.Sin(phi)));
-        //      coords += origin;
-
-
-        //Console.Out.WriteLine(String.Format("Lat: {0} {1}: Lon: {2} {3}", lat >= 0 ? "N" : "S" , Math.Abs(lat), lon >= 0 ? "E" : "W" , Math.Abs(lon)));
-        //Console.Out.WriteLine();
-        //Console.Out.WriteLine(String.Format("GPS:MAP_GPS:{0}:{1}:{2}:#FFFFFFFF:", coords.X, coords.Y, coords.Z));
     }
 }
