@@ -1,11 +1,17 @@
 <?xml version="1.0"?>
 <Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-    <LCDTextures>
-        <LCDTextureDefinition>
-            <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercator" />
-            <TexturePath>Textures\Sprites\Kharak.dds</TexturePath>
-            <SpritePath>Textures\Sprites\Kharak.dds</SpritePath>
-          <Selectable>true</Selectable>
-        </LCDTextureDefinition>
-    </LCDTextures>
+  <LCDTextures>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercatorZones" />
+      <TexturePath>Textures\Sprites\KharakS5ZoneColors.dds</TexturePath>
+      <SpritePath>Textures\Sprites\KharakS5ZoneColors.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercator" />
+      <TexturePath>Textures\Sprites\Kharak.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Kharak.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+  </LCDTextures>
 </Definitions>

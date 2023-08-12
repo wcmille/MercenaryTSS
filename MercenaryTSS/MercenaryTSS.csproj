@@ -13,6 +13,9 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>6</LangVersion>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -112,6 +115,7 @@
   <ItemGroup>
     <Compile Include="MercenaryTSS.cs" />
     <Compile Include="PlanetMapTSS.cs" />
+    <Compile Include="PlanetMapTSSZones.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

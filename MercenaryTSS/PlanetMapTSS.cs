@@ -19,9 +19,8 @@ namespace MercenaryTSS
     [MyTextSurfaceScript("PlanetMapTSS", "Planet Map")]
     public class PlanetMapTSS : MyTSSCommon
     {
-        public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update10; // frequency that Run() is called.
-
         private readonly IMyTerminalBlock TerminalBlock;
+        readonly string textureMapBase = "GVK_KharakMercator";
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -31,6 +30,14 @@ namespace MercenaryTSS
             // Called when script is created.
             // This class is instanced per LCD that uses it, which means the same block can have multiple instances of this script aswell (e.g. a cockpit with all its screens set to use this script).
         }
+
+        protected PlanetMapTSS(string mapBase, IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : this(surface, block, size)
+        {
+            textureMapBase = mapBase;
+        }
+
+        public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update100; // frequency that Run() is called.
+
 
         public override void Dispose()
         {
@@ -76,7 +83,7 @@ namespace MercenaryTSS
 
                 // the colors in the terminal are Surface.ScriptBackgroundColor and Surface.ScriptForegroundColor, the other ones without Script in name are for text/image mode.
 
-                DrawMap(frame, screenCorner, screenSize);
+                DrawMap(frame);
                 float ngm;
                 var grav = MyAPIGateway.GravityProviderSystem.CalculateNaturalGravityInPoint(TerminalBlock.GetPosition(), out ngm);
                 if (!Vector3D.IsZero(grav))
@@ -91,13 +98,13 @@ namespace MercenaryTSS
             frame.Dispose(); // send sprites to the screen
         }
 
-        void DrawMap(MySpriteDrawFrame frame, Vector2 screenCorner, Vector2 screenSize)
+        void DrawMap(MySpriteDrawFrame frame)
         {
             // Create background sprite
             var sprite = new MySprite()
             {
                 Type = SpriteType.TEXTURE,
-                Data = "GVK_KharakMercator",
+                Data = textureMapBase,
                 Alignment = TextAlignment.CENTER
             };
             // Add the sprite to the frame
@@ -112,7 +119,7 @@ namespace MercenaryTSS
                 Type = SpriteType.TEXTURE,
                 Data = "Circle",
                 Position = pos,
-                Size = new Vector2(19 * 2+1, 19 * 2 + 1),
+                Size = new Vector2(19 * 2 + 1, 19 * 2 + 1),
                 Color = Color.Blue.Alpha(0.50f),
                 Alignment = TextAlignment.CENTER
             };
@@ -150,8 +157,8 @@ namespace MercenaryTSS
         {
             return new Vector2I
             {
-                X = screenWidth/2+(int)(screenWidth/2 * -Math.Atan2(location.X, location.Z) / Math.PI),
-                Y = screenHeight/2-(int) (screenHeight * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)
+                X = screenWidth / 2 + (int)(screenWidth / 2 * -Math.Atan2(location.X, location.Z) / Math.PI),
+                Y = screenHeight / 2 - (int)(screenHeight * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)
             };
         }
         void DrawError(Exception e)
