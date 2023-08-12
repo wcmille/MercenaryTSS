@@ -126,8 +126,8 @@ namespace MercenaryTSS
         {
             return new Vector2I
             {
-                X = screenWidth/2+(int)(screenWidth/2 * Math.Atan2(location.Z, location.X) / Math.PI),
-                Y = screenHeight/2-(int) (screenHeight * Math.Atan2(location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)
+                X = screenWidth/2+(int)(screenWidth/2 * -Math.Atan2(location.X, location.Z) / Math.PI),
+                Y = screenHeight/2-(int) (screenHeight * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)
             };
         }
         void DrawError(Exception e)
