@@ -92,7 +92,7 @@ namespace BMC.MercenaryTSS
 
         VRage.Collections.DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> myDefinitions;
         MyDefinitionId myDefinitionId;
-        float textSize = 1.0f;
+        readonly float textSize = 1.0f;
 
         public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update10; // frequency that Run() is called.
         readonly ConfigIt configit;

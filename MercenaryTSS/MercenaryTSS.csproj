@@ -115,4 +115,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>rd "C:\Users\wayne\AppData\Roaming\SpaceEngineers\Mods\MercenaryTSS\Data\" /s /q
+rd "C:\Users\wayne\AppData\Roaming\SpaceEngineers\Mods\MercenaryTSS\Textures\" /s /q
+xcopy $(ProjectDir)*.cs "C:\Users\wayne\AppData\Roaming\SpaceEngineers\Mods\MercenaryTSS\Data\Scripts\MercenaryTSS\" /y
+xcopy $(SolutionDir)Data "C:\Users\wayne\AppData\Roaming\SpaceEngineers\Mods\MercenaryTSS\Data\" /y /s
+xcopy $(SolutionDir)Textures "C:\Users\wayne\AppData\Roaming\SpaceEngineers\Mods\MercenaryTSS\Textures\" /y /s</PostBuildEvent>
+  </PropertyGroup>
 </Project>

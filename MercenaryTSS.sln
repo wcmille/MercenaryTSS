@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33723.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MercenaryTSS", "MercenaryTSS\MercenaryTSS.csproj", "{2C5CE3DE-4D50-411D-98D6-937565FB10D8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MercenaryTSS.Test", "MercenaryTSS.Test\MercenaryTSS.Test.csproj", "{86F2D201-22A1-4A06-B269-8A16805F6F3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{2C5CE3DE-4D50-411D-98D6-937565FB10D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C5CE3DE-4D50-411D-98D6-937565FB10D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C5CE3DE-4D50-411D-98D6-937565FB10D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86F2D201-22A1-4A06-B269-8A16805F6F3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86F2D201-22A1-4A06-B269-8A16805F6F3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86F2D201-22A1-4A06-B269-8A16805F6F3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86F2D201-22A1-4A06-B269-8A16805F6F3B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
