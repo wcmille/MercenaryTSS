@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.GameSystems.TextSurfaceScripts;
+﻿using Sandbox.Game.Entities;
+using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
 using System;
 using VRage.Game;
@@ -80,8 +81,10 @@ namespace MercenaryTSS
                 var grav = MyAPIGateway.GravityProviderSystem.CalculateNaturalGravityInPoint(TerminalBlock.GetPosition(), out ngm);
                 if (!Vector3D.IsZero(grav))
                 {
-                    var pos = GPSToVector(-grav, (int)screenSize.Y, (int)screenSize.X);
+                    var pos = GPSToVector(-grav, (int)screenSize.X, (int)screenSize.Y);
                     DrawLoc(frame, pos);
+                    var planetPos = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition()).PositionComp.GetPosition();
+                    DrawGPS(frame, planetPos, screenSize);
                 }
                 // add more sprites and stuff
             }
@@ -109,15 +112,41 @@ namespace MercenaryTSS
                 Type = SpriteType.TEXTURE,
                 Data = "Circle",
                 Position = pos,
-                Size = new Vector2(16,16),
-                Color = Color.Blue.Alpha(0.75f),
+                Size = new Vector2(19 * 2+1, 19 * 2 + 1),
+                Color = Color.Blue.Alpha(0.50f),
                 Alignment = TextAlignment.CENTER
             };
-            // Add the sprite to the frame
             frame.Add(sprite);
         }
 
-        public static Vector2I GPSToVector(Vector3D location, int screenHeight, int screenWidth)
+        void DrawGPS(MySpriteDrawFrame frame, Vector3D center, Vector2 screenSize)
+        {
+            var lhp = MyAPIGateway.Session.LocalHumanPlayer;
+            if (lhp != null)
+            {
+                var pid = lhp.IdentityId;
+                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(pid);
+                foreach (var g in gpsList)
+                {
+                    if (g != null && g.ShowOnHud)
+                    {
+                        var sprite = new MySprite()
+                        {
+                            Type = SpriteType.TEXTURE,
+                            Data = "SquareSimple",
+                            Position = GPSToVector(g.Coords - center, (int)screenSize.X, (int)screenSize.Y),
+                            Size = new Vector2(5, 5),
+                            Color = g.GPSColor,
+                            Alignment = TextAlignment.CENTER,
+                            RotationOrScale = (float)Math.PI / 4.0f
+                        };
+                        frame.Add(sprite);
+                    }
+                }
+            }
+        }
+
+        public static Vector2I GPSToVector(Vector3D location, int screenWidth, int screenHeight)
         {
             return new Vector2I
             {
