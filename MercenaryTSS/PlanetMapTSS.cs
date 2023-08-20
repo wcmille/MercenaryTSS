@@ -21,14 +21,30 @@ namespace MercenaryTSS
     {
         private readonly IMyTerminalBlock TerminalBlock;
         readonly string textureMapBase = "GVK_KharakMercator";
+        readonly RectangleF viewPort; 
+        readonly Vector2 presenceRadius = new Vector2(19 * 2 + 1, 19 * 2 + 1);
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
-            TerminalBlock = (IMyTerminalBlock)block; // internal stored m_block is the ingame interface which has no events, so can't unhook later on, therefore this field is required.
-            TerminalBlock.OnMarkForClose += BlockMarkedForClose; // required if you're gonna make use of Dispose() as it won't get called when block is removed or grid is cut/unloaded.
+            // internal stored m_block is the ingame interface which has no events, so can't unhook later on, therefore this field is required.
+            TerminalBlock = (IMyTerminalBlock)block; 
 
-            // Called when script is created.
-            // This class is instanced per LCD that uses it, which means the same block can have multiple instances of this script aswell (e.g. a cockpit with all its screens set to use this script).
+            // required if you're gonna make use of Dispose() as it won't get called when block is removed or grid is cut/unloaded.
+            TerminalBlock.OnMarkForClose += BlockMarkedForClose;
+
+            var x = surface.SurfaceSize.X;
+            var y = surface.SurfaceSize.Y;
+            if (x / y >= 2.0f)
+            {
+                x = y * 2.0f;
+            }
+            else
+            {
+                y = x * 0.5f;
+            }
+            presenceRadius *= y / 512.0f;
+            var ss = new Vector2(x,y);
+            viewPort = new RectangleF((surface.TextureSize - ss) / 2f, ss);
         }
 
         protected PlanetMapTSS(string mapBase, IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : this(surface, block, size)
@@ -70,8 +86,8 @@ namespace MercenaryTSS
 
         void Draw() // this is a custom method which is called in Run().
         {
-            Vector2 screenSize = Surface.SurfaceSize;
-            Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
+            //Vector2 screenSize = Surface.SurfaceSize;
+            //Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
 
             var frame = Surface.DrawFrame();
             {
@@ -88,10 +104,10 @@ namespace MercenaryTSS
                 var grav = MyAPIGateway.GravityProviderSystem.CalculateNaturalGravityInPoint(TerminalBlock.GetPosition(), out ngm);
                 if (!Vector3D.IsZero(grav))
                 {
-                    var pos = GPSToVector(-grav, (int)screenSize.X, (int)screenSize.Y);
+                    var pos = GPSToVector(-grav, viewPort);
                     DrawLoc(frame, pos);
                     var planetPos = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition()).PositionComp.GetPosition();
-                    DrawGPS(frame, planetPos, screenSize);
+                    DrawGPS(frame, planetPos);
                 }
                 // add more sprites and stuff
             }
@@ -105,7 +121,8 @@ namespace MercenaryTSS
             {
                 Type = SpriteType.TEXTURE,
                 Data = textureMapBase,
-                Alignment = TextAlignment.CENTER
+                Alignment = TextAlignment.CENTER,
+                Size = new Vector2(viewPort.Width, viewPort.Height)
             };
             // Add the sprite to the frame
             frame.Add(sprite);
@@ -119,14 +136,14 @@ namespace MercenaryTSS
                 Type = SpriteType.TEXTURE,
                 Data = "Circle",
                 Position = pos,
-                Size = new Vector2(19 * 2 + 1, 19 * 2 + 1),
+                Size = presenceRadius,
                 Color = Color.Blue.Alpha(0.50f),
                 Alignment = TextAlignment.CENTER
             };
             frame.Add(sprite);
         }
 
-        void DrawGPS(MySpriteDrawFrame frame, Vector3D center, Vector2 screenSize)
+        void DrawGPS(MySpriteDrawFrame frame, Vector3D center)
         {
             var lhp = MyAPIGateway.Session.LocalHumanPlayer;
             if (lhp != null)
@@ -141,24 +158,73 @@ namespace MercenaryTSS
                         {
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
-                            Position = GPSToVector(g.Coords - center, (int)screenSize.X, (int)screenSize.Y),
+                            Position = GPSToVector(g.Coords - center, viewPort),
                             Size = new Vector2(5, 5),
                             Color = g.GPSColor,
                             Alignment = TextAlignment.CENTER,
                             RotationOrScale = (float)Math.PI / 4.0f
                         };
+                        var backGround = new MySprite()
+                        {
+                            Type = SpriteType.TEXTURE,
+                            Data = "SquareSimple",
+                            Position = GPSToVector(g.Coords - center, viewPort),
+                            Size = new Vector2(7, 7),
+                            Color = Color.Black,
+                            Alignment = TextAlignment.CENTER,
+                            RotationOrScale = (float)Math.PI / 4.0f
+                        };
+                        frame.Add(backGround);
                         frame.Add(sprite);
                     }
                 }
             }
         }
 
-        public static Vector2I GPSToVector(Vector3D location, int screenWidth, int screenHeight)
+        //void DrawSigs(MySpriteDrawFrame frame, Vector3D center)
+        //{
+        //    var lhp = MyAPIGateway.Session.LocalHumanPlayer;
+        //    if (lhp != null)
+        //    {
+        //        var pid = lhp.IdentityId;
+        //        MyDataReceiver r;
+        //        HashSet<MyDataBroadcaster> sigList = MyAntennaSystem.Static.GetAllRelayedBroadcasters(pid,ref sigList, pid);
+                
+        //        foreach (var sig in sigList)
+        //        {
+        //            if (sig != null && sig.ShowOnHud)
+        //            {
+        //                var sprite = new MySprite()
+        //                {
+        //                    Type = SpriteType.TEXTURE,
+        //                    Data = "SquareSimple",
+        //                    Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
+        //                    Size = new Vector2(5, 5),
+        //                    Color = Color.Red,
+        //                    Alignment = TextAlignment.CENTER,
+        //                };
+        //                var backGround = new MySprite()
+        //                {
+        //                    Type = SpriteType.TEXTURE,
+        //                    Data = "SquareSimple",
+        //                    Position = GPSToVector(g.Coords - center, viewPort),
+        //                    Size = new Vector2(7, 7),
+        //                    Color = Color.Black,
+        //                    Alignment = TextAlignment.CENTER,
+        //                };
+        //                frame.Add(backGround);
+        //                frame.Add(sprite);
+        //            }
+        //        }
+        //    }
+        //}
+
+        public static Vector2I GPSToVector(Vector3D location, RectangleF viewport)
         {
             return new Vector2I
             {
-                X = screenWidth / 2 + (int)(screenWidth / 2 * -Math.Atan2(location.X, location.Z) / Math.PI),
-                Y = screenHeight / 2 - (int)(screenHeight * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)
+                X = (int)((viewport.Width / 2.0f + viewport.Width / 2 * -Math.Atan2(location.X, location.Z) / Math.PI)+viewport.X),
+                Y = (int)((viewport.Height / 2.0f - viewport.Height * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)+viewport.Y)
             };
         }
         void DrawError(Exception e)
@@ -177,7 +243,6 @@ namespace MercenaryTSS
                 var text = MySprite.CreateText($"ERROR: {e.Message}\n{e.StackTrace}\n\nPlease send screenshot of this to mod author.\n{MyAPIGateway.Utilities.GamePaths.ModScopeName}", "White", Color.Red, 0.7f, TextAlignment.LEFT);
                 text.Position = screenCorner + new Vector2(16, 16);
                 frame.Add(text);
-
                 frame.Dispose();
             }
             catch (Exception e2)
