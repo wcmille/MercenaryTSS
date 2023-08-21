@@ -1,6 +1,10 @@
-﻿using System;
+﻿using Sandbox.Game.Entities;
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.ModAPI;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
@@ -14,10 +18,20 @@ namespace MercenaryTSS
     public class PowerAndLSTss : MyTSSCommon
     {
         private readonly IMyTerminalBlock TerminalBlock;
+        readonly RectangleF viewport;
+        readonly PowerWatcher pw;
+        readonly GasWatcher gw;
+        readonly SpriteDrawer sd;
+
         public PowerAndLSTss(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
             TerminalBlock = (IMyTerminalBlock)block;
             TerminalBlock.OnMarkForClose += BlockMarkedForClose;
+
+            viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f, surface.SurfaceSize);
+            pw = new PowerWatcher(TerminalBlock);
+            gw = new GasWatcher(TerminalBlock);
+            sd = new SpriteDrawer(viewport);
         }
 
         public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update100;
@@ -33,9 +47,16 @@ namespace MercenaryTSS
             try
             {
                 base.Run();
-                using (var frame = Surface.DrawFrame())
+                pw.Refresh();
+                gw.Refresh();
+                var frame = Surface.DrawFrame();
+                try
                 {
-                    Draw(frame);
+                    Draw(ref frame);
+                }
+                finally
+                {
+                    frame.Dispose();
                 }
             }
             catch (Exception e)
@@ -49,13 +70,203 @@ namespace MercenaryTSS
             Dispose();
         }
 
-        private void Draw(MySpriteDrawFrame frame) // this is a custom method which is called in Run().
+        class SpriteDrawer
         {
-            Vector2 screenSize = Surface.SurfaceSize;
-            Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
-            {
-                // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
+            readonly float y = 25;
+            readonly float barHeight = 20.0f;
+            readonly float iconWide = 32.0f;
+            readonly float margin = 25.0f;
+            readonly float barLength = 256.0f;
+            Vector2 pen;
+            readonly RectangleF viewport;
+            MySprite sprite;
+
+            public SpriteDrawer(RectangleF viewport)
+            {       
+                this.viewport = viewport;
             }
+
+            public void Reset()
+            {
+                pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
+            }
+
+            public void DrawPower(ref MySpriteDrawFrame frame, PowerWatcher pw)
+            {
+                //Draw Backbar
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "IconEnergy",
+                    Position = new Vector2((margin + iconWide) * 0.5f, margin + (barHeight * 4.0f - y) * 0.5f + viewport.Position.Y),
+                    Size = new Vector2(iconWide, iconWide),
+                    Color = Color.White,
+                    Alignment = TextAlignment.CENTER
+                };
+                frame.Add(sprite);
+
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength, barHeight),
+                    Color = Color.Gray,
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                //Draw Power Remaining
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * pw.CalculateBatteryPercent(), barHeight),
+                    Color = Color.Green.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                pen.Y += y;
+                //Draw Total Frame
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen + new Vector2(0, barHeight * 0.5f),
+                    Size = new Vector2(barLength, barHeight * 2),
+                    Color = Color.Gray,
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                //Draw Total Consume
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * pw.CalculateProducePercent(), barHeight),
+                    Color = Color.Blue.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                pen.Y += barHeight;
+                //Draw Total Consume
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * pw.CalculateConsumePercent(), barHeight),
+                    Color = Color.Red.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+                pen.Y += 2 * y;
+            }
+            public void DrawHydro(ref MySpriteDrawFrame frame, GasWatcher gw)
+            {
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "IconHydrogen",
+                    Position = new Vector2((margin + iconWide) * 0.5f, margin + 2 * y + (barHeight * 4.0f - y) * 1.5f + viewport.Position.Y),
+                    Size = new Vector2(iconWide, iconWide),
+                    Color = Color.White,
+                    Alignment = TextAlignment.CENTER
+                };
+                frame.Add(sprite);
+
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength, barHeight),
+                    Color = Color.Gray,
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                //Draw Power Remaining
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * gw.CalculateHydroPercent(), barHeight),
+                    Color = Color.Green.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                //pen.Y += y;
+                ////Draw Total Frame
+                //sprite = new MySprite
+                //{
+                //    Type = SpriteType.TEXTURE,
+                //    Data = "SquareSimple",
+                //    Position = pen + new Vector2(0, barHeight * 0.5f),
+                //    Size = new Vector2(barLength, barHeight * 2),
+                //    Color = Color.Gray,
+                //    Alignment = TextAlignment.LEFT
+                //};
+                //frame.Add(sprite);
+
+                ////Draw Total Consume
+                //sprite = new MySprite
+                //{
+                //    Type = SpriteType.TEXTURE,
+                //    Data = "SquareSimple",
+                //    Position = pen,
+                //    Size = new Vector2(barLength * pw.CalculateProducePercent(), barHeight),
+                //    Color = Color.Blue.Alpha(0.66f),
+                //    Alignment = TextAlignment.LEFT
+                //};
+                //frame.Add(sprite);
+
+                //pen.Y += barHeight;
+                ////Draw Total Consume
+                //sprite = new MySprite
+                //{
+                //    Type = SpriteType.TEXTURE,
+                //    Data = "SquareSimple",
+                //    Position = pen,
+                //    Size = new Vector2(barLength * pw.CalculateConsumePercent(), barHeight),
+                //    Color = Color.Red.Alpha(0.66f),
+                //    Alignment = TextAlignment.LEFT
+                //};
+                //frame.Add(sprite);
+                pen.Y += 2 * y;
+            }
+
+            public void DrawOxy(ref MySpriteDrawFrame frame)
+            {
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "IconOxygen",
+                    Position = new Vector2((margin + iconWide) * 0.5f, margin + 4 * y + (barHeight * 4.0f - y) * 2.5f + viewport.Position.Y),
+                    Size = new Vector2(iconWide, iconWide),
+                    Color = Color.White,
+                    Alignment = TextAlignment.CENTER
+                };
+                frame.Add(sprite);
+            }
+        }
+
+        private void Draw(ref MySpriteDrawFrame frame)
+        {
+            //Vector2 screenSize = Surface.SurfaceSize;
+            //Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
+            // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
+            sd.Reset();
+            sd.DrawPower(ref frame, pw);
+            sd.DrawHydro(ref frame, gw);
+            sd.DrawOxy(ref frame);
         }
 
         private void DrawError(Exception e)
@@ -84,6 +295,128 @@ namespace MercenaryTSS
 
                 if (MyAPIGateway.Session?.Player != null)
                     MyAPIGateway.Utilities.ShowNotification($"[ ERROR: {GetType().FullName}: {e.Message} | Send SpaceEngineers.Log to mod author ]", 10000, MyFontEnum.Red);
+            }
+        }
+
+        public class GasWatcher
+        {
+            readonly IMyTerminalBlock myTerminalBlock;
+            readonly List<IMyGasTank> tanks = new List<IMyGasTank>();
+
+            public GasWatcher(IMyTerminalBlock myTerminalBlock)
+            {
+                this.myTerminalBlock = myTerminalBlock;
+            }
+
+            public float CalculateHydroPercent()
+            {
+                var current = tanks.Sum(x=> (float)x.FilledRatio * x.Capacity);
+                var total = tanks.Sum(x => x.Capacity);
+                return current / total;
+            }
+
+            //public float CalculateHydroProduce()
+            //{
+            //    var current = tanks.Sum(x => x.);
+            //    var total = tanks.Sum(x => x.Capacity);
+            //    return current / total;
+            //}
+
+            public float CalculateHydroConsume()
+            {
+                var current = tanks.Sum(x => (float)x.FilledRatio * x.Capacity);
+                var total = tanks.Sum(x => x.Capacity);
+                return current / total;
+            }
+
+            public void Refresh()
+            {
+                tanks.Clear();
+                var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
+                var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsWorking);
+
+                foreach (var myBlock in myFatBlocks)
+                {
+                    if (myBlock is IMyGasTank && (myBlock as IMyGasTank).BlockDefinition.SubtypeName.Contains("Hydrogen"))
+                    {
+                        tanks.Add(myBlock as IMyGasTank);
+                    }
+                }
+            }
+        }
+
+        public class PowerWatcher
+        {
+            readonly IMyTerminalBlock myTerminalBlock;
+            readonly List<IMyBatteryBlock> batteryBlocks = new List<IMyBatteryBlock>();
+            readonly List<IMyPowerProducer> windTurbines = new List<IMyPowerProducer>();
+            readonly List<IMyPowerProducer> hydroenEngines = new List<IMyPowerProducer>();
+            readonly List<IMySolarPanel> solarPanels = new List<IMySolarPanel>();
+            readonly List<IMyReactor> reactors = new List<IMyReactor>();
+
+            public PowerWatcher(IMyTerminalBlock myTerminalBlock)
+            {
+                this.myTerminalBlock = myTerminalBlock;
+            }
+
+            public float CalculateBatteryPercent()
+            {
+                var current = batteryBlocks.Sum(x => x.CurrentStoredPower);
+                var total = batteryBlocks.Sum(x => x.MaxStoredPower);
+                return current / total;
+            }
+
+            public float CalculateProducePercent()
+            {
+                //batteryBlocks.Sum(x => x.CurrentOutput) + 
+                var current = hydroenEngines.Sum(x=>x.CurrentOutput);
+                var total = batteryBlocks.Sum(x => x.MaxOutput);
+                return current / total;
+            }
+
+            public float CalculateConsumePercent()
+            {
+                var current = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
+                var total = batteryBlocks.Sum(x => x.MaxOutput);
+                return current / total;
+            }
+
+            public void Refresh()
+            {
+                batteryBlocks.Clear();
+                windTurbines.Clear();
+                hydroenEngines.Clear();
+                solarPanels.Clear();
+                reactors.Clear();
+
+                var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
+                var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsWorking);
+                foreach (var myBlock in myFatBlocks)
+                {
+                    if (myBlock is IMyBatteryBlock)
+                    {
+                        batteryBlocks.Add(myBlock as IMyBatteryBlock);
+                    }
+                    else if (myBlock is IMyPowerProducer)
+                    {
+                        if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Wind"))
+                        {
+                            windTurbines.Add((IMyPowerProducer)myBlock);
+                        }
+                        else if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Hydrogen"))
+                        {
+                            hydroenEngines.Add((IMyPowerProducer)myBlock);
+                        }
+                        else if (myBlock is IMyReactor)
+                        {
+                            reactors.Add((IMyReactor)myBlock);
+                        }
+                        else if (myBlock is IMySolarPanel)
+                        {
+                            solarPanels.Add((IMySolarPanel)myBlock);
+                        }
+                    }
+                }
             }
         }
     }
