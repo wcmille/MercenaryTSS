@@ -1,4 +1,6 @@
-﻿using Sandbox.Game.Entities;
+﻿using Sandbox.Definitions;
+using Sandbox.Game.Entities;
+using Sandbox.Game.EntityComponents;
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
 using SpaceEngineers.Game.ModAPI;
@@ -203,43 +205,43 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
-                //pen.Y += y;
-                ////Draw Total Frame
-                //sprite = new MySprite
-                //{
-                //    Type = SpriteType.TEXTURE,
-                //    Data = "SquareSimple",
-                //    Position = pen + new Vector2(0, barHeight * 0.5f),
-                //    Size = new Vector2(barLength, barHeight * 2),
-                //    Color = Color.Gray,
-                //    Alignment = TextAlignment.LEFT
-                //};
-                //frame.Add(sprite);
+                pen.Y += y;
+                //Draw Total Frame
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen + new Vector2(0, barHeight * 0.5f),
+                    Size = new Vector2(barLength, barHeight * 2),
+                    Color = Color.Gray,
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
 
-                ////Draw Total Consume
-                //sprite = new MySprite
-                //{
-                //    Type = SpriteType.TEXTURE,
-                //    Data = "SquareSimple",
-                //    Position = pen,
-                //    Size = new Vector2(barLength * pw.CalculateProducePercent(), barHeight),
-                //    Color = Color.Blue.Alpha(0.66f),
-                //    Alignment = TextAlignment.LEFT
-                //};
-                //frame.Add(sprite);
+                //Draw Total Consume
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * gw.CalculateHydroProduce(), barHeight),
+                    Color = Color.Blue.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
 
-                //pen.Y += barHeight;
-                ////Draw Total Consume
-                //sprite = new MySprite
-                //{
-                //    Type = SpriteType.TEXTURE,
-                //    Data = "SquareSimple",
-                //    Position = pen,
-                //    Size = new Vector2(barLength * pw.CalculateConsumePercent(), barHeight),
-                //    Color = Color.Red.Alpha(0.66f),
-                //    Alignment = TextAlignment.LEFT
-                //};
-                //frame.Add(sprite);
+                pen.Y += barHeight;
+                //Draw Total Consume
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * gw.CalculateHydroConsume(), barHeight),
+                    Color = Color.Red.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
                 pen.Y += 2 * y;
             }
 
@@ -315,17 +317,43 @@ namespace MercenaryTSS
                 return current / total;
             }
 
-            //public float CalculateHydroProduce()
-            //{
-            //    var current = tanks.Sum(x => x.);
-            //    var total = tanks.Sum(x => x.Capacity);
-            //    return current / total;
-            //}
+            public float CalculateHydroProduce()
+            {
+                float current = 0.0f;
+                float total = 0.0f;
+                foreach (var block in tanks)
+                {
+                    var c = block.Components.Get<MyResourceSourceComponent>();
+                    if (c != null)
+                    {
+                        total += c.MaxOutput;
+                    }
+                }
+                foreach (var block in tanks)
+                {
+                    var c = block.Components.Get<MyResourceSinkComponent>();
+                    
+                    if (c != null)
+                    {
+                        current += c.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
+                    }
+                }
+                return current / total;
+            }
 
             public float CalculateHydroConsume()
             {
-                var current = tanks.Sum(x => (float)x.FilledRatio * x.Capacity);
-                var total = tanks.Sum(x => x.Capacity);
+                float current = 0.0f;
+                float total = 0.0f;
+                foreach(var block in tanks) 
+                {
+                    var c = block.Components.Get<MyResourceSourceComponent>();
+                    if (c != null)
+                    {
+                        current+=c.CurrentOutput;
+                        total += c.MaxOutput;
+                    }
+                }
                 return current / total;
             }
 
