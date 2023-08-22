@@ -6,6 +6,7 @@ using SpaceEngineers.Game.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
@@ -120,15 +121,28 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
+                float cap = pw.CalcCapacity();
                 //Draw Power Remaining
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * pw.CalcCapacity(), barHeight),
-                    Color = Color.Green.Alpha(0.66f),
+                    Size = new Vector2(barLength * cap, barHeight),
+                    Color = foreground,
                     Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXT,
+                    Data = $"{cap:P1}",
+                    Position = new Vector2(viewport.Center.X, pen.Y-barHeight*0.5f),
+                    Color = Color.Black,
+                    FontId = "White",
+                    RotationOrScale = 0.5f,
+                    Alignment = TextAlignment.CENTER
                 };
                 frame.Add(sprite);
 
@@ -169,86 +183,40 @@ namespace MercenaryTSS
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
+
+                float bingo = pw.CalcBingo();
+                //Draw Power Remaining
+                if (Math.Abs(bingo) > 0.00001f)
+                {
+                    sprite = new MySprite
+                    {
+                        Type = SpriteType.TEXT,
+                        Data = TimeFormat(Math.Abs(bingo)),
+                        Position = new Vector2(pen.X + barLength, pen.Y - (barHeight * (bingo < 0.0f ? 0.5f : 1.5f))),
+                        Color = bingo < 0.0f ? Color.Black : foreground,
+                        FontId = "White",
+                        RotationOrScale = 0.7f,
+                        Alignment = TextAlignment.RIGHT
+                    };
+                    frame.Add(sprite);
+                }
                 pen.Y += 2 * y;
             }
-            //public void DrawHydro(ref MySpriteDrawFrame frame, IWatcher gw)
-            //{
-            //    sprite = new MySprite
-            //    {
-            //        Type = SpriteType.TEXTURE,
-            //        Data = "IconHydrogen",
-            //        Position = new Vector2((margin + iconWide) * 0.5f, margin + 2 * y + (barHeight * 4.0f - y) * 1.5f + viewport.Position.Y),
-            //        Size = new Vector2(iconWide, iconWide),
-            //        Color = Color.White,
-            //        Alignment = TextAlignment.CENTER
-            //    };
-            //    frame.Add(sprite);
 
-            //    sprite = new MySprite
-            //    {
-            //        Type = SpriteType.TEXTURE,
-            //        Data = "SquareSimple",
-            //        Position = pen,
-            //        Size = new Vector2(barLength, barHeight),
-            //        Color = Color.Gray,
-            //        Alignment = TextAlignment.LEFT
-            //    };
-            //    frame.Add(sprite);
-
-            //    //Draw Power Remaining
-            //    sprite = new MySprite
-            //    {
-            //        Type = SpriteType.TEXTURE,
-            //        Data = "SquareSimple",
-            //        Position = pen,
-            //        Size = new Vector2(barLength * gw.CalcCapacity(), barHeight),
-            //        Color = Color.Green.Alpha(0.66f),
-            //        Alignment = TextAlignment.LEFT
-            //    };
-            //    frame.Add(sprite);
-
-            //    pen.Y += y;
-            //    //Draw Total Frame
-            //    sprite = new MySprite
-            //    {
-            //        Type = SpriteType.TEXTURE,
-            //        Data = "SquareSimple",
-            //        Position = pen + new Vector2(0, barHeight * 0.5f),
-            //        Size = new Vector2(barLength, barHeight * 2),
-            //        Color = Color.Gray,
-            //        Alignment = TextAlignment.LEFT
-            //    };
-            //    frame.Add(sprite);
-
-            //    //Draw Total Consume
-            //    sprite = new MySprite
-            //    {
-            //        Type = SpriteType.TEXTURE,
-            //        Data = "SquareSimple",
-            //        Position = pen,
-            //        Size = new Vector2(barLength * gw.CalcProduce(), barHeight),
-            //        Color = Color.Blue.Alpha(0.66f),
-            //        Alignment = TextAlignment.LEFT
-            //    };
-            //    frame.Add(sprite);
-
-            //    pen.Y += barHeight;
-            //    //Draw Total Consume
-            //    sprite = new MySprite
-            //    {
-            //        Type = SpriteType.TEXTURE,
-            //        Data = "SquareSimple",
-            //        Position = pen,
-            //        Size = new Vector2(barLength * gw.CalcConsume(), barHeight),
-            //        Color = Color.Red.Alpha(0.66f),
-            //        Alignment = TextAlignment.LEFT
-            //    };
-            //    frame.Add(sprite);
-            //    pen.Y += 2 * y;
-            //}
+            public static string TimeFormat(double seconds)
+            {
+                if (seconds < 1.0) return $"{seconds * 1000:F0}ms";
+                if (seconds < 10.0) return $"{seconds:F1}s";
+                if (seconds < 100) return $"{seconds:F0}s";
+                if (seconds < 90 * 60) return $"{(seconds / 60.0):F0}m";
+                if (seconds < 3600 * 36) return $"{(seconds / 3600.0):F0}h";
+                return $"{(seconds / (3600.0 * 24)):F0}d";
+            }
 
             public void DrawOxy(ref MySpriteDrawFrame frame, GasWatcher gw, Color foreground)
             {
+                Color backbar = new Color(foreground.ToVector3() * 0.25f);
+
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
@@ -266,7 +234,7 @@ namespace MercenaryTSS
                     Data = "SquareSimple",
                     Position = pen,
                     Size = new Vector2(barLength, barHeight),
-                    Color = new Color(foreground.ToVector3() * 0.25f),
+                    Color = backbar,
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
@@ -278,7 +246,7 @@ namespace MercenaryTSS
                     Data = "SquareSimple",
                     Position = pen,
                     Size = new Vector2(barLength * gw.CalcOCapacity(), barHeight),
-                    Color = Color.Green.Alpha(0.66f),
+                    Color = foreground,
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
@@ -389,6 +357,31 @@ namespace MercenaryTSS
                 return current / total;
             }
 
+            public float CalcBingo()
+            {
+                var cap = h2Tanks.Sum(x => (float)x.FilledRatio * x.Capacity);
+                var max = h2Tanks.Sum(x => x.Capacity);
+
+                float net = 0.0f;
+                foreach (var block in h2Tanks)
+                {
+                    var c = block.Components.Get<MyResourceSourceComponent>();
+                    if (c != null)
+                    {
+                        net -= c.CurrentOutput;
+                    }
+                    var c2 = block.Components.Get<MyResourceSinkComponent>();
+
+                    if (c2 != null)
+                    {
+                        net += c2.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
+                    }
+                }
+                if (net < 0.0f) { return cap / net; }
+                if (net > 0.0f) { return (max - cap) / net; }
+                return 0.0f;
+            }
+
             public void Refresh()
             {
                 o2Tanks.Clear();
@@ -409,6 +402,7 @@ namespace MercenaryTSS
 
         public interface IWatcher
         {
+            float CalcBingo();
             float CalcCapacity();
             float CalcProduce();
             float CalcConsume();
@@ -449,6 +443,19 @@ namespace MercenaryTSS
                 var current = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
                 var total = batteryBlocks.Sum(x => x.MaxOutput);
                 return current / total;
+            }
+
+            public float CalcBingo()
+            {
+                var max = batteryBlocks.Sum(x => x.MaxStoredPower);
+                var capacity = batteryBlocks.Sum(x => x.CurrentStoredPower);
+                var produce = hydroenEngines.Sum(x => x.CurrentOutput);
+                var consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
+
+                var net = produce - consume;
+                if (net < 0.0f) { return capacity * 3600 / net; }
+                if (net > 0.0f) { return (max - capacity) * 3600 / net; }
+                return 0.0f;
             }
 
             public void Refresh()
