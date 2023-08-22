@@ -85,6 +85,7 @@ namespace MercenaryTSS
             public SpriteDrawer(RectangleF viewport)
             {       
                 this.viewport = viewport;
+                barLength = viewport.Width - margin * 2.0f - iconWide * 2.0f;
             }
 
             public void Reset()
@@ -92,16 +93,18 @@ namespace MercenaryTSS
                 pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
             }
 
-            public void DrawPower(ref MySpriteDrawFrame frame, PowerWatcher pw)
+            public void DrawSection(ref MySpriteDrawFrame frame, IWatcher pw, string icon, Color foreground)
             {
+                Color backbar = new Color(foreground.ToVector3() * 0.25f);
+
                 //Draw Backbar
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
-                    Data = "IconEnergy",
-                    Position = new Vector2((margin + iconWide) * 0.5f, margin + (barHeight * 4.0f - y) * 0.5f + viewport.Position.Y),
+                    Data = icon,
+                    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
                     Size = new Vector2(iconWide, iconWide),
-                    Color = Color.White,
+                    Color = foreground,
                     Alignment = TextAlignment.CENTER
                 };
                 frame.Add(sprite);
@@ -112,7 +115,7 @@ namespace MercenaryTSS
                     Data = "SquareSimple",
                     Position = pen,
                     Size = new Vector2(barLength, barHeight),
-                    Color = Color.Gray,
+                    Color = backbar,
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
@@ -137,7 +140,7 @@ namespace MercenaryTSS
                     Data = "SquareSimple",
                     Position = pen + new Vector2(0, barHeight * 0.5f),
                     Size = new Vector2(barLength, barHeight * 2),
-                    Color = Color.Gray,
+                    Color = backbar,
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
@@ -168,83 +171,83 @@ namespace MercenaryTSS
                 frame.Add(sprite);
                 pen.Y += 2 * y;
             }
-            public void DrawHydro(ref MySpriteDrawFrame frame, GasWatcher gw)
-            {
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "IconHydrogen",
-                    Position = new Vector2((margin + iconWide) * 0.5f, margin + 2 * y + (barHeight * 4.0f - y) * 1.5f + viewport.Position.Y),
-                    Size = new Vector2(iconWide, iconWide),
-                    Color = Color.White,
-                    Alignment = TextAlignment.CENTER
-                };
-                frame.Add(sprite);
+            //public void DrawHydro(ref MySpriteDrawFrame frame, IWatcher gw)
+            //{
+            //    sprite = new MySprite
+            //    {
+            //        Type = SpriteType.TEXTURE,
+            //        Data = "IconHydrogen",
+            //        Position = new Vector2((margin + iconWide) * 0.5f, margin + 2 * y + (barHeight * 4.0f - y) * 1.5f + viewport.Position.Y),
+            //        Size = new Vector2(iconWide, iconWide),
+            //        Color = Color.White,
+            //        Alignment = TextAlignment.CENTER
+            //    };
+            //    frame.Add(sprite);
 
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen,
-                    Size = new Vector2(barLength, barHeight),
-                    Color = Color.Gray,
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
+            //    sprite = new MySprite
+            //    {
+            //        Type = SpriteType.TEXTURE,
+            //        Data = "SquareSimple",
+            //        Position = pen,
+            //        Size = new Vector2(barLength, barHeight),
+            //        Color = Color.Gray,
+            //        Alignment = TextAlignment.LEFT
+            //    };
+            //    frame.Add(sprite);
 
-                //Draw Power Remaining
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen,
-                    Size = new Vector2(barLength * gw.CalcCapacity(), barHeight),
-                    Color = Color.Green.Alpha(0.66f),
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
+            //    //Draw Power Remaining
+            //    sprite = new MySprite
+            //    {
+            //        Type = SpriteType.TEXTURE,
+            //        Data = "SquareSimple",
+            //        Position = pen,
+            //        Size = new Vector2(barLength * gw.CalcCapacity(), barHeight),
+            //        Color = Color.Green.Alpha(0.66f),
+            //        Alignment = TextAlignment.LEFT
+            //    };
+            //    frame.Add(sprite);
 
-                pen.Y += y;
-                //Draw Total Frame
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen + new Vector2(0, barHeight * 0.5f),
-                    Size = new Vector2(barLength, barHeight * 2),
-                    Color = Color.Gray,
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
+            //    pen.Y += y;
+            //    //Draw Total Frame
+            //    sprite = new MySprite
+            //    {
+            //        Type = SpriteType.TEXTURE,
+            //        Data = "SquareSimple",
+            //        Position = pen + new Vector2(0, barHeight * 0.5f),
+            //        Size = new Vector2(barLength, barHeight * 2),
+            //        Color = Color.Gray,
+            //        Alignment = TextAlignment.LEFT
+            //    };
+            //    frame.Add(sprite);
 
-                //Draw Total Consume
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen,
-                    Size = new Vector2(barLength * gw.CalcProduce(), barHeight),
-                    Color = Color.Blue.Alpha(0.66f),
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
+            //    //Draw Total Consume
+            //    sprite = new MySprite
+            //    {
+            //        Type = SpriteType.TEXTURE,
+            //        Data = "SquareSimple",
+            //        Position = pen,
+            //        Size = new Vector2(barLength * gw.CalcProduce(), barHeight),
+            //        Color = Color.Blue.Alpha(0.66f),
+            //        Alignment = TextAlignment.LEFT
+            //    };
+            //    frame.Add(sprite);
 
-                pen.Y += barHeight;
-                //Draw Total Consume
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen,
-                    Size = new Vector2(barLength * gw.CalcConsume(), barHeight),
-                    Color = Color.Red.Alpha(0.66f),
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
-                pen.Y += 2 * y;
-            }
+            //    pen.Y += barHeight;
+            //    //Draw Total Consume
+            //    sprite = new MySprite
+            //    {
+            //        Type = SpriteType.TEXTURE,
+            //        Data = "SquareSimple",
+            //        Position = pen,
+            //        Size = new Vector2(barLength * gw.CalcConsume(), barHeight),
+            //        Color = Color.Red.Alpha(0.66f),
+            //        Alignment = TextAlignment.LEFT
+            //    };
+            //    frame.Add(sprite);
+            //    pen.Y += 2 * y;
+            //}
 
-            public void DrawOxy(ref MySpriteDrawFrame frame, GasWatcher gw)
+            public void DrawOxy(ref MySpriteDrawFrame frame, GasWatcher gw, Color foreground)
             {
                 sprite = new MySprite
                 {
@@ -252,7 +255,7 @@ namespace MercenaryTSS
                     Data = "IconOxygen",
                     Position = new Vector2((margin + iconWide) * 0.5f, margin + 4 * y + (barHeight * 4.0f - y) * 2.5f + viewport.Position.Y),
                     Size = new Vector2(iconWide, iconWide),
-                    Color = Color.White,
+                    Color = foreground,
                     Alignment = TextAlignment.CENTER
                 };
                 frame.Add(sprite);
@@ -263,7 +266,7 @@ namespace MercenaryTSS
                     Data = "SquareSimple",
                     Position = pen,
                     Size = new Vector2(barLength, barHeight),
-                    Color = Color.Gray,
+                    Color = new Color(foreground.ToVector3() * 0.25f),
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
@@ -288,9 +291,9 @@ namespace MercenaryTSS
             //Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
             // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
             sd.Reset();
-            sd.DrawPower(ref frame, pw);
-            sd.DrawHydro(ref frame, gw);
-            sd.DrawOxy(ref frame, gw);
+            sd.DrawSection(ref frame, pw, "IconEnergy", Surface.ScriptForegroundColor);
+            sd.DrawSection(ref frame, gw, "IconHydrogen", Surface.ScriptForegroundColor);
+            sd.DrawOxy(ref frame, gw, Surface.ScriptForegroundColor);
         }
 
         private void DrawError(Exception e)
@@ -322,7 +325,7 @@ namespace MercenaryTSS
             }
         }
 
-        public class GasWatcher
+        public class GasWatcher : IWatcher
         {
             readonly IMyTerminalBlock myTerminalBlock;
             readonly List<IMyGasTank> h2Tanks = new List<IMyGasTank>();
@@ -404,7 +407,15 @@ namespace MercenaryTSS
             }
         }
 
-        public class PowerWatcher
+        public interface IWatcher
+        {
+            float CalcCapacity();
+            float CalcProduce();
+            float CalcConsume();
+            void Refresh();
+        }
+
+        public class PowerWatcher : IWatcher
         {
             readonly IMyTerminalBlock myTerminalBlock;
             readonly List<IMyBatteryBlock> batteryBlocks = new List<IMyBatteryBlock>();
