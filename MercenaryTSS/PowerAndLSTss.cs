@@ -1,5 +1,4 @@
-﻿using Sandbox.Definitions;
-using Sandbox.Game.Entities;
+﻿using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
@@ -124,7 +123,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * pw.CalculateBatteryPercent(), barHeight),
+                    Size = new Vector2(barLength * pw.CalcCapacity(), barHeight),
                     Color = Color.Green.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -149,7 +148,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * pw.CalculateProducePercent(), barHeight),
+                    Size = new Vector2(barLength * pw.CalcProduce(), barHeight),
                     Color = Color.Blue.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -162,7 +161,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * pw.CalculateConsumePercent(), barHeight),
+                    Size = new Vector2(barLength * pw.CalcConsume(), barHeight),
                     Color = Color.Red.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -199,7 +198,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * gw.CalculateHydroPercent(), barHeight),
+                    Size = new Vector2(barLength * gw.CalcCapacity(), barHeight),
                     Color = Color.Green.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -224,7 +223,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * gw.CalculateHydroProduce(), barHeight),
+                    Size = new Vector2(barLength * gw.CalcProduce(), barHeight),
                     Color = Color.Blue.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -237,7 +236,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * gw.CalculateHydroConsume(), barHeight),
+                    Size = new Vector2(barLength * gw.CalcConsume(), barHeight),
                     Color = Color.Red.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -245,7 +244,7 @@ namespace MercenaryTSS
                 pen.Y += 2 * y;
             }
 
-            public void DrawOxy(ref MySpriteDrawFrame frame)
+            public void DrawOxy(ref MySpriteDrawFrame frame, GasWatcher gw)
             {
                 sprite = new MySprite
                 {
@@ -255,6 +254,29 @@ namespace MercenaryTSS
                     Size = new Vector2(iconWide, iconWide),
                     Color = Color.White,
                     Alignment = TextAlignment.CENTER
+                };
+                frame.Add(sprite);
+
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength, barHeight),
+                    Color = Color.Gray,
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                //Draw Power Remaining
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen,
+                    Size = new Vector2(barLength * gw.CalcOCapacity(), barHeight),
+                    Color = Color.Green.Alpha(0.66f),
+                    Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
             }
@@ -268,7 +290,7 @@ namespace MercenaryTSS
             sd.Reset();
             sd.DrawPower(ref frame, pw);
             sd.DrawHydro(ref frame, gw);
-            sd.DrawOxy(ref frame);
+            sd.DrawOxy(ref frame, gw);
         }
 
         private void DrawError(Exception e)
@@ -303,25 +325,32 @@ namespace MercenaryTSS
         public class GasWatcher
         {
             readonly IMyTerminalBlock myTerminalBlock;
-            readonly List<IMyGasTank> tanks = new List<IMyGasTank>();
+            readonly List<IMyGasTank> h2Tanks = new List<IMyGasTank>();
+            readonly List<IMyGasTank> o2Tanks = new List<IMyGasTank>();
 
             public GasWatcher(IMyTerminalBlock myTerminalBlock)
             {
                 this.myTerminalBlock = myTerminalBlock;
             }
-
-            public float CalculateHydroPercent()
+            public float CalcOCapacity()
             {
-                var current = tanks.Sum(x=> (float)x.FilledRatio * x.Capacity);
-                var total = tanks.Sum(x => x.Capacity);
+                var current = o2Tanks.Sum(x => (float)x.FilledRatio * x.Capacity);
+                var total = o2Tanks.Sum(x => x.Capacity);
                 return current / total;
             }
 
-            public float CalculateHydroProduce()
+            public float CalcCapacity()
+            {
+                var current = h2Tanks.Sum(x=> (float)x.FilledRatio * x.Capacity);
+                var total = h2Tanks.Sum(x => x.Capacity);
+                return current / total;
+            }
+
+            public float CalcProduce()
             {
                 float current = 0.0f;
                 float total = 0.0f;
-                foreach (var block in tanks)
+                foreach (var block in h2Tanks)
                 {
                     var c = block.Components.Get<MyResourceSourceComponent>();
                     if (c != null)
@@ -329,7 +358,7 @@ namespace MercenaryTSS
                         total += c.MaxOutput;
                     }
                 }
-                foreach (var block in tanks)
+                foreach (var block in h2Tanks)
                 {
                     var c = block.Components.Get<MyResourceSinkComponent>();
                     
@@ -341,11 +370,11 @@ namespace MercenaryTSS
                 return current / total;
             }
 
-            public float CalculateHydroConsume()
+            public float CalcConsume()
             {
                 float current = 0.0f;
                 float total = 0.0f;
-                foreach(var block in tanks) 
+                foreach(var block in h2Tanks) 
                 {
                     var c = block.Components.Get<MyResourceSourceComponent>();
                     if (c != null)
@@ -359,15 +388,17 @@ namespace MercenaryTSS
 
             public void Refresh()
             {
-                tanks.Clear();
+                o2Tanks.Clear();
+                h2Tanks.Clear();
                 var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
                 var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsWorking);
 
                 foreach (var myBlock in myFatBlocks)
                 {
-                    if (myBlock is IMyGasTank && (myBlock as IMyGasTank).BlockDefinition.SubtypeName.Contains("Hydrogen"))
+                    if (myBlock is IMyGasTank)
                     {
-                        tanks.Add(myBlock as IMyGasTank);
+                        if ((myBlock as IMyGasTank).BlockDefinition.SubtypeName.Contains("Hydrogen")) h2Tanks.Add(myBlock as IMyGasTank);
+                        else /*if ((myBlock as IMyGasTank).BlockDefinition.SubtypeName.Contains("Oxygen"))*/ o2Tanks.Add(myBlock as IMyGasTank);
                     }
                 }
             }
@@ -387,14 +418,14 @@ namespace MercenaryTSS
                 this.myTerminalBlock = myTerminalBlock;
             }
 
-            public float CalculateBatteryPercent()
+            public float CalcCapacity()
             {
                 var current = batteryBlocks.Sum(x => x.CurrentStoredPower);
                 var total = batteryBlocks.Sum(x => x.MaxStoredPower);
                 return current / total;
             }
 
-            public float CalculateProducePercent()
+            public float CalcProduce()
             {
                 //batteryBlocks.Sum(x => x.CurrentOutput) + 
                 var current = hydroenEngines.Sum(x=>x.CurrentOutput);
@@ -402,7 +433,7 @@ namespace MercenaryTSS
                 return current / total;
             }
 
-            public float CalculateConsumePercent()
+            public float CalcConsume()
             {
                 var current = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
                 var total = batteryBlocks.Sum(x => x.MaxOutput);
