@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.Entities;
+﻿using Sandbox.Definitions;
+using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
@@ -6,7 +7,6 @@ using SpaceEngineers.Game.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
@@ -23,6 +23,7 @@ namespace MercenaryTSS
         readonly RectangleF viewport;
         readonly PowerWatcher pw;
         readonly GasWatcher gw;
+        readonly GasWatcher ogw;
         readonly SpriteDrawer sd;
 
         public PowerAndLSTss(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
@@ -32,7 +33,8 @@ namespace MercenaryTSS
 
             viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f, surface.SurfaceSize);
             pw = new PowerWatcher(TerminalBlock);
-            gw = new GasWatcher(TerminalBlock);
+            gw = new GasWatcher(TerminalBlock, MyResourceDistributorComponent.HydrogenId);
+            ogw = new GasWatcher(TerminalBlock, MyResourceDistributorComponent.OxygenId);
             sd = new SpriteDrawer(viewport);
         }
 
@@ -51,6 +53,7 @@ namespace MercenaryTSS
                 base.Run();
                 pw.Refresh();
                 gw.Refresh();
+                ogw.Refresh();
                 var frame = Surface.DrawFrame();
                 try
                 {
@@ -94,6 +97,21 @@ namespace MercenaryTSS
                 pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
             }
 
+            public void DrawCargo(ref MySpriteDrawFrame frame, Color foreground)
+            {
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXT,
+                    Data = "Ice\nUranium",
+                    Position = pen,
+                    Color = foreground,
+                    FontId = "White",
+                    RotationOrScale = 0.7f,
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+            }
+
             public void DrawSection(ref MySpriteDrawFrame frame, IWatcher pw, string icon, Color foreground)
             {
                 Color backbar = new Color(foreground.ToVector3() * 0.25f);
@@ -134,17 +152,17 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXT,
-                    Data = $"{cap:P1}",
-                    Position = new Vector2(viewport.Center.X, pen.Y-barHeight*0.5f),
-                    Color = Color.Black,
-                    FontId = "White",
-                    RotationOrScale = 0.5f,
-                    Alignment = TextAlignment.CENTER
-                };
-                frame.Add(sprite);
+                //sprite = new MySprite
+                //{
+                //    Type = SpriteType.TEXT,
+                //    Data = $"{cap:P1}",
+                //    Position = new Vector2(viewport.Center.X, pen.Y-barHeight*0.5f),
+                //    Color = Color.Black,
+                //    FontId = "White",
+                //    RotationOrScale = 0.5f,
+                //    Alignment = TextAlignment.CENTER
+                //};
+                //frame.Add(sprite);
 
                 pen.Y += y;
                 //Draw Total Frame
@@ -186,12 +204,17 @@ namespace MercenaryTSS
 
                 float bingo = pw.CalcBingo();
                 //Draw Power Remaining
+
+                string dep = "Depleted";
+                string rech = "Recharged";
+
                 if (Math.Abs(bingo) > 0.00001f)
                 {
+                    var t = bingo < 0.0 ? dep : rech;
                     sprite = new MySprite
                     {
                         Type = SpriteType.TEXT,
-                        Data = TimeFormat(Math.Abs(bingo)),
+                        Data = $"{t} in {TimeFormat(Math.Abs(bingo))}",
                         Position = new Vector2(pen.X + barLength, pen.Y - (barHeight * (bingo < 0.0f ? 0.5f : 1.5f))),
                         Color = bingo < 0.0f ? Color.Black : foreground,
                         FontId = "White",
@@ -212,45 +235,6 @@ namespace MercenaryTSS
                 if (seconds < 3600 * 36) return $"{(seconds / 3600.0):F0}h";
                 return $"{(seconds / (3600.0 * 24)):F0}d";
             }
-
-            public void DrawOxy(ref MySpriteDrawFrame frame, GasWatcher gw, Color foreground)
-            {
-                Color backbar = new Color(foreground.ToVector3() * 0.25f);
-
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "IconOxygen",
-                    Position = new Vector2((margin + iconWide) * 0.5f, margin + 4 * y + (barHeight * 4.0f - y) * 2.5f + viewport.Position.Y),
-                    Size = new Vector2(iconWide, iconWide),
-                    Color = foreground,
-                    Alignment = TextAlignment.CENTER
-                };
-                frame.Add(sprite);
-
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen,
-                    Size = new Vector2(barLength, barHeight),
-                    Color = backbar,
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
-
-                //Draw Power Remaining
-                sprite = new MySprite
-                {
-                    Type = SpriteType.TEXTURE,
-                    Data = "SquareSimple",
-                    Position = pen,
-                    Size = new Vector2(barLength * gw.CalcOCapacity(), barHeight),
-                    Color = foreground,
-                    Alignment = TextAlignment.LEFT
-                };
-                frame.Add(sprite);
-            }
         }
 
         private void Draw(ref MySpriteDrawFrame frame)
@@ -261,7 +245,7 @@ namespace MercenaryTSS
             sd.Reset();
             sd.DrawSection(ref frame, pw, "IconEnergy", Surface.ScriptForegroundColor);
             sd.DrawSection(ref frame, gw, "IconHydrogen", Surface.ScriptForegroundColor);
-            sd.DrawOxy(ref frame, gw, Surface.ScriptForegroundColor);
+            sd.DrawSection(ref frame, ogw, "IconOxygen", Surface.ScriptForegroundColor);
         }
 
         private void DrawError(Exception e)
@@ -297,17 +281,12 @@ namespace MercenaryTSS
         {
             readonly IMyTerminalBlock myTerminalBlock;
             readonly List<IMyGasTank> h2Tanks = new List<IMyGasTank>();
-            readonly List<IMyGasTank> o2Tanks = new List<IMyGasTank>();
+            readonly MyDefinitionId gasId;
 
-            public GasWatcher(IMyTerminalBlock myTerminalBlock)
+            public GasWatcher(IMyTerminalBlock myTerminalBlock, MyDefinitionId gasId)
             {
                 this.myTerminalBlock = myTerminalBlock;
-            }
-            public float CalcOCapacity()
-            {
-                var current = o2Tanks.Sum(x => (float)x.FilledRatio * x.Capacity);
-                var total = o2Tanks.Sum(x => x.Capacity);
-                return current / total;
+                this.gasId = gasId;
             }
 
             public float CalcCapacity()
@@ -374,7 +353,7 @@ namespace MercenaryTSS
 
                     if (c2 != null)
                     {
-                        net += c2.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
+                        net += c2.CurrentInputByType(gasId);
                     }
                 }
                 if (net < 0.0f) { return cap / net; }
@@ -384,7 +363,6 @@ namespace MercenaryTSS
 
             public void Refresh()
             {
-                o2Tanks.Clear();
                 h2Tanks.Clear();
                 var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
                 var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsWorking);
@@ -393,8 +371,7 @@ namespace MercenaryTSS
                 {
                     if (myBlock is IMyGasTank)
                     {
-                        if ((myBlock as IMyGasTank).BlockDefinition.SubtypeName.Contains("Hydrogen")) h2Tanks.Add(myBlock as IMyGasTank);
-                        else /*if ((myBlock as IMyGasTank).BlockDefinition.SubtypeName.Contains("Oxygen"))*/ o2Tanks.Add(myBlock as IMyGasTank);
+                        if (((MyGasTankDefinition)myBlock.BlockDefinition).StoredGasId == gasId) h2Tanks.Add(myBlock as IMyGasTank);
                     }
                 }
             }
