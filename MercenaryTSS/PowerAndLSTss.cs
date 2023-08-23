@@ -7,6 +7,7 @@ using SpaceEngineers.Game.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
@@ -35,7 +36,7 @@ namespace MercenaryTSS
             pw = new PowerWatcher(TerminalBlock);
             gw = new GasWatcher(TerminalBlock, MyResourceDistributorComponent.HydrogenId);
             ogw = new GasWatcher(TerminalBlock, MyResourceDistributorComponent.OxygenId);
-            sd = new SpriteDrawer(viewport);
+            sd = new SpriteDrawer(viewport, surface);
         }
 
         public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update100;
@@ -75,6 +76,47 @@ namespace MercenaryTSS
             Dispose();
         }
 
+        private void Draw(ref MySpriteDrawFrame frame)
+        {
+            //Vector2 screenSize = Surface.SurfaceSize;
+            //Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
+            // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
+            sd.Reset();
+            sd.DrawSection(ref frame, pw, "IconEnergy", Surface.ScriptForegroundColor);
+            sd.DrawSection(ref frame, gw, "IconHydrogen", Surface.ScriptForegroundColor);
+            sd.DrawSection(ref frame, ogw, "IconOxygen", Surface.ScriptForegroundColor);
+            sd.DrawCargo(ref frame, Surface.ScriptForegroundColor);
+        }
+
+        private void DrawError(Exception e)
+        {
+            MyLog.Default.WriteLineAndConsole($"{e.Message}\n{e.StackTrace}");
+
+            try
+            {
+                Vector2 screenSize = Surface.SurfaceSize;
+                Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
+
+                var frame = Surface.DrawFrame();
+
+                var bg = new MySprite(SpriteType.TEXTURE, "SquareSimple", null, null, Color.Black);
+                frame.Add(bg);
+
+                var text = MySprite.CreateText($"ERROR: {e.Message}\n{e.StackTrace}\n\nPlease send screenshot of this to mod author.\n{MyAPIGateway.Utilities.GamePaths.ModScopeName}", "White", Color.Red, 0.7f, TextAlignment.LEFT);
+                text.Position = screenCorner + new Vector2(16, 16);
+                frame.Add(text);
+
+                frame.Dispose();
+            }
+            catch (Exception e2)
+            {
+                MyLog.Default.WriteLineAndConsole($"Also failed to draw error on screen: {e2.Message}\n{e2.StackTrace}");
+
+                if (MyAPIGateway.Session?.Player != null)
+                    MyAPIGateway.Utilities.ShowNotification($"[ ERROR: {GetType().FullName}: {e.Message} | Send SpaceEngineers.Log to mod author ]", 10000, MyFontEnum.Red);
+            }
+        }
+
         class SpriteDrawer
         {
             readonly float y = 25;
@@ -85,11 +127,19 @@ namespace MercenaryTSS
             Vector2 pen;
             readonly RectangleF viewport;
             MySprite sprite;
+            readonly string text = "Ice:\n\nUranium:";
+            float scale = 0.7f;
+            readonly string font = "White";
+            readonly Vector2 offset;
 
-            public SpriteDrawer(RectangleF viewport)
-            {       
+            public SpriteDrawer(RectangleF viewport, IMyTextSurface surface)
+            {
                 this.viewport = viewport;
                 barLength = viewport.Width - margin * 2.0f - iconWide * 2.0f;
+                StringBuilder b = new StringBuilder(text);
+                StringBuilder c = new StringBuilder("999999");
+                offset = surface.MeasureStringInPixels(b, font, scale) + surface.MeasureStringInPixels(c, font, scale);
+                offset.Y = 0;
             }
 
             public void Reset()
@@ -101,13 +151,48 @@ namespace MercenaryTSS
             {
                 sprite = new MySprite
                 {
+                    Type = SpriteType.TEXTURE,
+                    Data = "MyObjectBuilder_Ore/Ice",
+                    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
+                    Size = new Vector2(iconWide, iconWide),
+                    Color = foreground,
+                    Alignment = TextAlignment.CENTER
+                };
+                frame.Add(sprite);
+
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "MyObjectBuilder_Ingot/Uranium",
+                    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y + iconWide),
+                    Size = new Vector2(iconWide, iconWide),
+                    Color = foreground,
+                    Alignment = TextAlignment.CENTER
+                };
+                frame.Add(sprite);
+
+                sprite = new MySprite
+                {
                     Type = SpriteType.TEXT,
-                    Data = "Ice\nUranium",
+                    Data = text,
                     Position = pen,
                     Color = foreground,
-                    FontId = "White",
-                    RotationOrScale = 0.7f,
+                    FontId = font,
+                    RotationOrScale = scale,
                     Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
+
+                
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXT,
+                    Data = $"{KiloFormat(10000)}\n\n{KiloFormat(987)}",
+                    Position = pen + offset,
+                    Color = foreground,
+                    FontId = font,
+                    RotationOrScale = scale,
+                    Alignment = TextAlignment.RIGHT
                 };
                 frame.Add(sprite);
             }
@@ -235,46 +320,32 @@ namespace MercenaryTSS
                 if (seconds < 3600 * 36) return $"{(seconds / 3600.0):F0}h";
                 return $"{(seconds / (3600.0 * 24)):F0}d";
             }
+
+            static string KiloFormat(float num)
+            {
+                if (num >= 100000000)
+                    return (num / 1000000).ToString("#,0 M");
+
+                if (num >= 10000000)
+                    return (num / 1000000).ToString("0.#") + " M";
+
+                if (num >= 100000)
+                    return (num / 1000).ToString("#,0 K");
+
+                if (num >= 10000)
+                    return (num / 1000).ToString("0.#") + " K";
+
+                return num.ToString("#,0");
+            }
         }
 
-        private void Draw(ref MySpriteDrawFrame frame)
+        public interface IWatcher
         {
-            //Vector2 screenSize = Surface.SurfaceSize;
-            //Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
-            // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
-            sd.Reset();
-            sd.DrawSection(ref frame, pw, "IconEnergy", Surface.ScriptForegroundColor);
-            sd.DrawSection(ref frame, gw, "IconHydrogen", Surface.ScriptForegroundColor);
-            sd.DrawSection(ref frame, ogw, "IconOxygen", Surface.ScriptForegroundColor);
-        }
-
-        private void DrawError(Exception e)
-        {
-            MyLog.Default.WriteLineAndConsole($"{e.Message}\n{e.StackTrace}");
-
-            try
-            {
-                Vector2 screenSize = Surface.SurfaceSize;
-                Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
-
-                var frame = Surface.DrawFrame();
-
-                var bg = new MySprite(SpriteType.TEXTURE, "SquareSimple", null, null, Color.Black);
-                frame.Add(bg);
-
-                var text = MySprite.CreateText($"ERROR: {e.Message}\n{e.StackTrace}\n\nPlease send screenshot of this to mod author.\n{MyAPIGateway.Utilities.GamePaths.ModScopeName}", "White", Color.Red, 0.7f, TextAlignment.LEFT);
-                text.Position = screenCorner + new Vector2(16, 16);
-                frame.Add(text);
-
-                frame.Dispose();
-            }
-            catch (Exception e2)
-            {
-                MyLog.Default.WriteLineAndConsole($"Also failed to draw error on screen: {e2.Message}\n{e2.StackTrace}");
-
-                if (MyAPIGateway.Session?.Player != null)
-                    MyAPIGateway.Utilities.ShowNotification($"[ ERROR: {GetType().FullName}: {e.Message} | Send SpaceEngineers.Log to mod author ]", 10000, MyFontEnum.Red);
-            }
+            float CalcBingo();
+            float CalcCapacity();
+            float CalcProduce();
+            float CalcConsume();
+            void Refresh();
         }
 
         public class GasWatcher : IWatcher
@@ -314,7 +385,7 @@ namespace MercenaryTSS
                     
                     if (c != null)
                     {
-                        current += c.CurrentInputByType(MyResourceDistributorComponent.HydrogenId);
+                        current += c.CurrentInputByType(gasId);
                     }
                 }
                 return current / total;
@@ -377,23 +448,16 @@ namespace MercenaryTSS
             }
         }
 
-        public interface IWatcher
-        {
-            float CalcBingo();
-            float CalcCapacity();
-            float CalcProduce();
-            float CalcConsume();
-            void Refresh();
-        }
-
         public class PowerWatcher : IWatcher
         {
             readonly IMyTerminalBlock myTerminalBlock;
             readonly List<IMyBatteryBlock> batteryBlocks = new List<IMyBatteryBlock>();
-            readonly List<IMyPowerProducer> windTurbines = new List<IMyPowerProducer>();
+            //readonly List<IMyPowerProducer> windTurbines = new List<IMyPowerProducer>();
             readonly List<IMyPowerProducer> hydroenEngines = new List<IMyPowerProducer>();
-            readonly List<IMySolarPanel> solarPanels = new List<IMySolarPanel>();
-            readonly List<IMyReactor> reactors = new List<IMyReactor>();
+            //readonly List<IMySolarPanel> solarPanels = new List<IMySolarPanel>();
+            //readonly List<IMyReactor> reactors = new List<IMyReactor>();
+
+            float max, capacity, produce, consume, maxOut;
 
             public PowerWatcher(IMyTerminalBlock myTerminalBlock)
             {
@@ -402,33 +466,21 @@ namespace MercenaryTSS
 
             public float CalcCapacity()
             {
-                var current = batteryBlocks.Sum(x => x.CurrentStoredPower);
-                var total = batteryBlocks.Sum(x => x.MaxStoredPower);
-                return current / total;
+                return capacity / max;
             }
 
             public float CalcProduce()
             {
-                //batteryBlocks.Sum(x => x.CurrentOutput) + 
-                var current = hydroenEngines.Sum(x=>x.CurrentOutput);
-                var total = batteryBlocks.Sum(x => x.MaxOutput);
-                return current / total;
+                return produce/maxOut;
             }
 
             public float CalcConsume()
             {
-                var current = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
-                var total = batteryBlocks.Sum(x => x.MaxOutput);
-                return current / total;
+                return consume/maxOut;
             }
 
             public float CalcBingo()
             {
-                var max = batteryBlocks.Sum(x => x.MaxStoredPower);
-                var capacity = batteryBlocks.Sum(x => x.CurrentStoredPower);
-                var produce = hydroenEngines.Sum(x => x.CurrentOutput);
-                var consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
-
                 var net = produce - consume;
                 if (net < 0.0f) { return capacity * 3600 / net; }
                 if (net > 0.0f) { return (max - capacity) * 3600 / net; }
@@ -438,10 +490,10 @@ namespace MercenaryTSS
             public void Refresh()
             {
                 batteryBlocks.Clear();
-                windTurbines.Clear();
+                //windTurbines.Clear();
                 hydroenEngines.Clear();
-                solarPanels.Clear();
-                reactors.Clear();
+                //solarPanels.Clear();
+                //reactors.Clear();
 
                 var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
                 var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsWorking);
@@ -455,7 +507,8 @@ namespace MercenaryTSS
                     {
                         if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Wind"))
                         {
-                            windTurbines.Add((IMyPowerProducer)myBlock);
+                            //windTurbines.Add((IMyPowerProducer)myBlock);
+                            hydroenEngines.Add((IMyPowerProducer)myBlock);
                         }
                         else if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Hydrogen"))
                         {
@@ -463,14 +516,22 @@ namespace MercenaryTSS
                         }
                         else if (myBlock is IMyReactor)
                         {
-                            reactors.Add((IMyReactor)myBlock);
+                            //reactors.Add((IMyReactor)myBlock);
+                            hydroenEngines.Add((IMyPowerProducer)myBlock);
                         }
                         else if (myBlock is IMySolarPanel)
                         {
-                            solarPanels.Add((IMySolarPanel)myBlock);
+                            //solarPanels.Add((IMySolarPanel)myBlock);
+                            hydroenEngines.Add((IMyPowerProducer)myBlock);
                         }
                     }
                 }
+
+                max = batteryBlocks.Sum(x => x.MaxStoredPower);
+                capacity = batteryBlocks.Sum(x => x.CurrentStoredPower);
+                produce = hydroenEngines.Sum(x => x.CurrentOutput);
+                consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
+                maxOut = batteryBlocks.Sum(x => x.MaxOutput);
             }
         }
     }
