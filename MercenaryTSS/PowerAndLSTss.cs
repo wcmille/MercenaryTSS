@@ -242,17 +242,6 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
-                //sprite = new MySprite
-                //{
-                //    Type = SpriteType.TEXT,
-                //    Data = $"{cap:P1}",
-                //    Position = new Vector2(viewport.Center.X, pen.Y-barHeight*0.5f),
-                //    Color = Color.Black,
-                //    FontId = "White",
-                //    RotationOrScale = 0.5f,
-                //    Alignment = TextAlignment.CENTER
-                //};
-                //frame.Add(sprite);
 
                 pen.Y += y;
                 //Draw Total Frame
@@ -306,7 +295,7 @@ namespace MercenaryTSS
                         Type = SpriteType.TEXT,
                         Data = $"{t} in {TimeFormat(Math.Abs(bingo))}",
                         Position = new Vector2(pen.X + barLength, pen.Y - (barHeight * (bingo < 0.0f ? 0.5f : 1.5f))),
-                        Color = bingo < 0.0f ? Color.Black : foreground,
+                        Color = bingo > 0.0f ? Color.Black : foreground,
                         FontId = "White",
                         RotationOrScale = 0.7f,
                         Alignment = TextAlignment.RIGHT
