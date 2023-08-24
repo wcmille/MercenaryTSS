@@ -15,9 +15,12 @@ using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
+//TODO: Don't show ice if there is no hydro anything (tanks, engines, (maybe ONLY) generators)
+//TODO: Don't show uranium if there is no reactors
+
 namespace MercenaryTSS
 {
-    [MyTextSurfaceScript("PowerAndLSTss", "Power & Life Support")]
+    [MyTextSurfaceScript("PowerAndLSTss", "BMC Power & Life Support")]
     public class PowerAndLSTss : MyTSSCommon
     {
         private readonly IMyTerminalBlock TerminalBlock;
@@ -25,6 +28,7 @@ namespace MercenaryTSS
         readonly PowerWatcher pw;
         readonly GasWatcher gw;
         readonly GasWatcher ogw;
+        readonly CargoWatcher cw;
         readonly SpriteDrawer sd;
 
         public PowerAndLSTss(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
@@ -36,6 +40,7 @@ namespace MercenaryTSS
             pw = new PowerWatcher(TerminalBlock);
             gw = new GasWatcher(TerminalBlock, MyResourceDistributorComponent.HydrogenId);
             ogw = new GasWatcher(TerminalBlock, MyResourceDistributorComponent.OxygenId);
+            cw = new CargoWatcher(TerminalBlock);
             sd = new SpriteDrawer(viewport, surface);
         }
 
@@ -55,6 +60,7 @@ namespace MercenaryTSS
                 pw.Refresh();
                 gw.Refresh();
                 ogw.Refresh();
+                cw.Refresh();
                 var frame = Surface.DrawFrame();
                 try
                 {
@@ -78,14 +84,12 @@ namespace MercenaryTSS
 
         private void Draw(ref MySpriteDrawFrame frame)
         {
-            //Vector2 screenSize = Surface.SurfaceSize;
-            //Vector2 screenCorner = (Surface.TextureSize - screenSize) * 0.5f;
             // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
             sd.Reset();
             sd.DrawSection(ref frame, pw, "IconEnergy", Surface.ScriptForegroundColor);
             sd.DrawSection(ref frame, gw, "IconHydrogen", Surface.ScriptForegroundColor);
             sd.DrawSection(ref frame, ogw, "IconOxygen", Surface.ScriptForegroundColor);
-            sd.DrawCargo(ref frame, Surface.ScriptForegroundColor);
+            sd.DrawCargo(ref frame, cw, Surface.ScriptForegroundColor);
         }
 
         private void DrawError(Exception e)
@@ -124,20 +128,21 @@ namespace MercenaryTSS
             readonly float iconWide = 32.0f;
             readonly float margin = 25.0f;
             readonly float barLength = 256.0f;
-            Vector2 pen;
             readonly RectangleF viewport;
-            MySprite sprite;
             readonly string text = "Ice:\n\nUranium:";
-            float scale = 0.7f;
+            readonly float scale = 0.7f;
             readonly string font = "White";
             readonly Vector2 offset;
+
+            Vector2 pen;
+            MySprite sprite;
 
             public SpriteDrawer(RectangleF viewport, IMyTextSurface surface)
             {
                 this.viewport = viewport;
                 barLength = viewport.Width - margin * 2.0f - iconWide * 2.0f;
                 StringBuilder b = new StringBuilder(text);
-                StringBuilder c = new StringBuilder("999999");
+                StringBuilder c = new StringBuilder("9999999");
                 offset = surface.MeasureStringInPixels(b, font, scale) + surface.MeasureStringInPixels(c, font, scale);
                 offset.Y = 0;
             }
@@ -147,7 +152,7 @@ namespace MercenaryTSS
                 pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
             }
 
-            public void DrawCargo(ref MySpriteDrawFrame frame, Color foreground)
+            public void DrawCargo(ref MySpriteDrawFrame frame, CargoWatcher cw, Color foreground)
             {
                 sprite = new MySprite
                 {
@@ -187,7 +192,7 @@ namespace MercenaryTSS
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXT,
-                    Data = $"{KiloFormat(10000)}\n\n{KiloFormat(987)}",
+                    Data = $"{KiloFormat(cw.Ice())} kg\n\n{KiloFormat(cw.Uranium())} kg",
                     Position = pen + offset,
                     Color = foreground,
                     FontId = font,
@@ -333,7 +338,7 @@ namespace MercenaryTSS
                     return (num / 1000).ToString("#,0 K");
 
                 if (num >= 10000)
-                    return (num / 1000).ToString("0.#") + " K";
+                    return (num / 1000).ToString("0.#") + " k";
 
                 return num.ToString("#,0");
             }
@@ -532,6 +537,78 @@ namespace MercenaryTSS
                 produce = hydroenEngines.Sum(x => x.CurrentOutput);
                 consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
                 maxOut = batteryBlocks.Sum(x => x.MaxOutput);
+            }
+        }
+
+        public class CargoWatcher
+        {
+            readonly List<IMyInventory> inventories = new List<IMyInventory>();
+            readonly List<VRage.Game.ModAPI.Ingame.MyInventoryItem> inventoryItems = new List<VRage.Game.ModAPI.Ingame.MyInventoryItem>();
+            readonly Dictionary<string, int> cargoAmmo = new Dictionary<string, int>();
+            readonly VRage.Collections.DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> myDefinitions;
+
+            readonly IMyTerminalBlock myTerminalBlock;
+
+            public CargoWatcher(IMyTerminalBlock terminalBlock)
+            {
+                myTerminalBlock = terminalBlock;
+                cargoAmmo.Add("Ice", 0);
+                cargoAmmo.Add("Uranium", 0);
+            }
+
+            public float Ice()
+            {
+                return cargoAmmo["Ice"];
+            }
+
+            public float Uranium()
+            {
+                return cargoAmmo["Uranium"];
+            }
+            public void Refresh()
+            {
+                var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
+                var myFatBlocks = myCubeGrid.GetFatBlocks();
+
+                inventories.Clear();
+
+                foreach (var myBlock in myFatBlocks)
+                {
+                    if (myBlock.HasInventory && myBlock.IsFunctional)
+                    {
+                        for (int i = 0; i < myBlock.InventoryCount; i++)
+                        {
+                            inventories.Add(myBlock.GetInventory(i));
+                        }
+                    }
+                }
+
+                cargoAmmo["Ice"] = 0;
+                cargoAmmo["Uranium"] = 0;
+
+                foreach (var inventory in inventories)
+                {
+                    if (inventory.ItemCount != 0)
+                    {
+                        inventoryItems.Clear();
+                        inventory.GetItems(inventoryItems);
+
+                        foreach (var item in inventoryItems)
+                        {
+                            var type = item.Type.TypeId;
+                            var subtype = item.Type.SubtypeId;
+                            string name = null;
+                            if (subtype == "Ice") name = "Ice";
+                            else if (subtype == "Uranium" && type == "MyObjectBuilder_Ingot") name = "Uranium";
+
+                            if (name == "Ice" || name == "Uranium")
+                            {
+                                var amount = item.Amount.ToIntSafe();
+                                cargoAmmo[name] += amount;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
