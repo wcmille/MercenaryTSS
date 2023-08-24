@@ -17,6 +17,12 @@ using VRageMath;
 
 //TODO: Don't show ice if there is no hydro anything (tanks, engines, (maybe ONLY) generators)
 //TODO: Don't show uranium if there is no reactors
+//TODO: Show stockpile, off, etc as on capacity.
+//TODO: Improve font alignment
+//TODO: Add Title on Square screens
+//TODO: Design 2x1 Layout
+//TODO: Improve text on 256px high screens
+//TODO: Design ultra wide layout. (4x1)
 
 namespace MercenaryTSS
 {
@@ -140,9 +146,17 @@ namespace MercenaryTSS
             public SpriteDrawer(RectangleF viewport, IMyTextSurface surface)
             {
                 this.viewport = viewport;
+
+                margin = 0.05f * viewport.Width;
+                y = margin;
+                barHeight = 0.04f * viewport.Height;
+                iconWide = 0.0625f * viewport.Width;
                 barLength = viewport.Width - margin * 2.0f - iconWide * 2.0f;
                 StringBuilder b = new StringBuilder(text);
                 StringBuilder c = new StringBuilder("9999999");
+                offset = surface.MeasureStringInPixels(c, font, 1.0f);
+                scale = barHeight / offset.Y;
+
                 offset = surface.MeasureStringInPixels(b, font, scale) + surface.MeasureStringInPixels(c, font, scale);
                 offset.Y = 0;
             }
@@ -187,7 +201,6 @@ namespace MercenaryTSS
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
-
                 
                 sprite = new MySprite
                 {
@@ -297,7 +310,7 @@ namespace MercenaryTSS
                         Position = new Vector2(pen.X + barLength, pen.Y - (barHeight * (bingo < 0.0f ? 0.5f : 1.5f))),
                         Color = bingo > 0.0f ? Color.Black : foreground,
                         FontId = "White",
-                        RotationOrScale = 0.7f,
+                        RotationOrScale = scale,
                         Alignment = TextAlignment.RIGHT
                     };
                     frame.Add(sprite);
@@ -318,16 +331,16 @@ namespace MercenaryTSS
             static string KiloFormat(float num)
             {
                 if (num >= 100000000)
-                    return (num / 1000000).ToString("#,0 M");
+                    return (num / 1000000).ToString("#,0M");
 
                 if (num >= 10000000)
-                    return (num / 1000000).ToString("0.#") + " M";
+                    return (num / 1000000).ToString("0.#") + "M";
 
                 if (num >= 100000)
-                    return (num / 1000).ToString("#,0 K");
+                    return (num / 1000).ToString("#,0K");
 
                 if (num >= 10000)
-                    return (num / 1000).ToString("0.#") + " k";
+                    return (num / 1000).ToString("0.#") + "k";
 
                 return num.ToString("#,0");
             }
@@ -447,7 +460,7 @@ namespace MercenaryTSS
             readonly IMyTerminalBlock myTerminalBlock;
             readonly List<IMyBatteryBlock> batteryBlocks = new List<IMyBatteryBlock>();
             //readonly List<IMyPowerProducer> windTurbines = new List<IMyPowerProducer>();
-            readonly List<IMyPowerProducer> hydroenEngines = new List<IMyPowerProducer>();
+            readonly List<IMyPowerProducer> hydroEngines = new List<IMyPowerProducer>();
             //readonly List<IMySolarPanel> solarPanels = new List<IMySolarPanel>();
             //readonly List<IMyReactor> reactors = new List<IMyReactor>();
 
@@ -485,7 +498,7 @@ namespace MercenaryTSS
             {
                 batteryBlocks.Clear();
                 //windTurbines.Clear();
-                hydroenEngines.Clear();
+                hydroEngines.Clear();
                 //solarPanels.Clear();
                 //reactors.Clear();
 
@@ -502,29 +515,29 @@ namespace MercenaryTSS
                         if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Wind"))
                         {
                             //windTurbines.Add((IMyPowerProducer)myBlock);
-                            hydroenEngines.Add((IMyPowerProducer)myBlock);
+                            hydroEngines.Add((IMyPowerProducer)myBlock);
                         }
                         else if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Hydrogen"))
                         {
-                            hydroenEngines.Add((IMyPowerProducer)myBlock);
+                            hydroEngines.Add((IMyPowerProducer)myBlock);
                         }
                         else if (myBlock is IMyReactor)
                         {
                             //reactors.Add((IMyReactor)myBlock);
-                            hydroenEngines.Add((IMyPowerProducer)myBlock);
+                            hydroEngines.Add((IMyPowerProducer)myBlock);
                         }
                         else if (myBlock is IMySolarPanel)
                         {
                             //solarPanels.Add((IMySolarPanel)myBlock);
-                            hydroenEngines.Add((IMyPowerProducer)myBlock);
+                            hydroEngines.Add((IMyPowerProducer)myBlock);
                         }
                     }
                 }
 
                 max = batteryBlocks.Sum(x => x.MaxStoredPower);
                 capacity = batteryBlocks.Sum(x => x.CurrentStoredPower);
-                produce = hydroenEngines.Sum(x => x.CurrentOutput);
-                consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroenEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
+                produce = hydroEngines.Sum(x => x.CurrentOutput);
+                consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
                 maxOut = batteryBlocks.Sum(x => x.MaxOutput);
             }
         }
@@ -533,26 +546,26 @@ namespace MercenaryTSS
         {
             readonly List<IMyInventory> inventories = new List<IMyInventory>();
             readonly List<VRage.Game.ModAPI.Ingame.MyInventoryItem> inventoryItems = new List<VRage.Game.ModAPI.Ingame.MyInventoryItem>();
-            readonly Dictionary<string, int> cargoAmmo = new Dictionary<string, int>();
-            readonly VRage.Collections.DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> myDefinitions;
+            readonly Dictionary<string, int> cargo = new Dictionary<string, int>();
+            //readonly VRage.Collections.DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> myDefinitions;
 
             readonly IMyTerminalBlock myTerminalBlock;
 
             public CargoWatcher(IMyTerminalBlock terminalBlock)
             {
                 myTerminalBlock = terminalBlock;
-                cargoAmmo.Add("Ice", 0);
-                cargoAmmo.Add("Uranium", 0);
+                cargo.Add("Ice", 0);
+                cargo.Add("Uranium", 0);
             }
 
             public float Ice()
             {
-                return cargoAmmo["Ice"];
+                return cargo["Ice"];
             }
 
             public float Uranium()
             {
-                return cargoAmmo["Uranium"];
+                return cargo["Uranium"];
             }
             public void Refresh()
             {
@@ -572,8 +585,8 @@ namespace MercenaryTSS
                     }
                 }
 
-                cargoAmmo["Ice"] = 0;
-                cargoAmmo["Uranium"] = 0;
+                cargo["Ice"] = 0;
+                cargo["Uranium"] = 0;
 
                 foreach (var inventory in inventories)
                 {
@@ -593,7 +606,7 @@ namespace MercenaryTSS
                             if (name == "Ice" || name == "Uranium")
                             {
                                 var amount = item.Amount.ToIntSafe();
-                                cargoAmmo[name] += amount;
+                                cargo[name] += amount;
                             }
                         }
                     }
