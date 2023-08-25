@@ -1,8 +1,12 @@
 ﻿using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Character;
+using Sandbox.Game.GameSystems;
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
 using VRage.Game;
+using VRage.Game.Entity;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -108,6 +112,7 @@ namespace MercenaryTSS
                     DrawLoc(frame, pos);
                     var planetPos = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition()).PositionComp.GetPosition();
                     DrawGPS(frame, planetPos);
+                    DrawSigs(frame, planetPos);
                 }
                 // add more sprites and stuff
             }
@@ -181,43 +186,73 @@ namespace MercenaryTSS
             }
         }
 
-        //void DrawSigs(MySpriteDrawFrame frame, Vector3D center)
-        //{
-        //    var lhp = MyAPIGateway.Session.LocalHumanPlayer;
-        //    if (lhp != null)
-        //    {
-        //        var pid = lhp.IdentityId;
-        //        MyDataReceiver r;
-        //        HashSet<MyDataBroadcaster> sigList = MyAntennaSystem.Static.GetAllRelayedBroadcasters(pid,ref sigList, pid);
-                
-        //        foreach (var sig in sigList)
-        //        {
-        //            if (sig != null && sig.ShowOnHud)
-        //            {
-        //                var sprite = new MySprite()
-        //                {
-        //                    Type = SpriteType.TEXTURE,
-        //                    Data = "SquareSimple",
-        //                    Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-        //                    Size = new Vector2(5, 5),
-        //                    Color = Color.Red,
-        //                    Alignment = TextAlignment.CENTER,
-        //                };
-        //                var backGround = new MySprite()
-        //                {
-        //                    Type = SpriteType.TEXTURE,
-        //                    Data = "SquareSimple",
-        //                    Position = GPSToVector(g.Coords - center, viewPort),
-        //                    Size = new Vector2(7, 7),
-        //                    Color = Color.Black,
-        //                    Alignment = TextAlignment.CENTER,
-        //                };
-        //                frame.Add(backGround);
-        //                frame.Add(sprite);
-        //            }
-        //        }
-        //    }
-        //}
+        void DrawSigs(MySpriteDrawFrame frame, Vector3D center)
+        {
+            var lhp = MyAPIGateway.Session.LocalHumanPlayer;
+            if (lhp != null)
+            {
+                var pid = lhp.IdentityId;
+                MyDataReceiver r;
+                //HashSet<MyDataBroadcaster> sigList = MyAntennaSystem.Static.GetAllRelayedBroadcasters(pid, ref sigList, pid);
+                var charRadio = lhp.Character.Components.Get<MyDataReceiver>();
+                //HashSet<MyDataBroadcaster> sigList = MyAntennaSystem.Static.GetAllRelayedBroadcasters((MyEntity)lhp, pid);
+                GetAllRelayedBroadcasters(charRadio, pid, false, null);
+
+                foreach (var sig in radioBroadcasters)
+                {
+                    if (sig != null && sig.ShowOnHud)
+                    {
+                        var sprite = new MySprite()
+                        {
+                            Type = SpriteType.TEXTURE,
+                            Data = "SquareSimple",
+                            Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
+                            Size = new Vector2(5, 5),
+                            Color = Color.Red,
+                            Alignment = TextAlignment.CENTER,
+                        };
+                        var backGround = new MySprite()
+                        {
+                            Type = SpriteType.TEXTURE,
+                            Data = "SquareSimple",
+                            Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
+                            Size = new Vector2(7, 7),
+                            Color = Color.Black,
+                            Alignment = TextAlignment.CENTER,
+                        };
+                        frame.Add(backGround);
+                        frame.Add(sprite);
+                    }
+                }
+            }
+        }
+
+        private HashSet<MyDataBroadcaster> radioBroadcasters = new HashSet<MyDataBroadcaster>();
+        private HashSet<long> tmpEntitiesOnHUD = new HashSet<long>();
+        private List<IMyTerminalBlock> dummyTerminalList = new List<IMyTerminalBlock>(0); // always empty
+
+        // HACK: copied from MyAntennaSystem.GetAllRelayedBroadcasters(MyDataReceiver receiver, ...)
+        private void GetAllRelayedBroadcasters(MyDataReceiver receiver, long identityId, bool mutual, HashSet<MyDataBroadcaster> output = null)
+        {
+            if (output == null)
+            {
+                output = radioBroadcasters;
+                output.Clear();
+            }
+
+            foreach (MyDataBroadcaster current in receiver.BroadcastersInRange)
+            {
+                if (!output.Contains(current) && !current.Closed && (!mutual || (current.Receiver != null && receiver.Broadcaster != null && current.Receiver.BroadcastersInRange.Contains(receiver.Broadcaster))))
+                {
+                    output.Add(current);
+
+                    if (current.Receiver != null && current.CanBeUsedByPlayer(identityId))
+                    {
+                        GetAllRelayedBroadcasters(current.Receiver, identityId, mutual, output);
+                    }
+                }
+            }
+        }
 
         public static Vector2I GPSToVector(Vector3D location, RectangleF viewport)
         {

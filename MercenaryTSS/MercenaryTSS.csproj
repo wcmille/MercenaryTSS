@@ -118,7 +118,7 @@
     <Compile Include="PlanetMapTSSZones.cs" />
     <Compile Include="PowerAndLSTss.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SpaceMap.cs" />
+    <Compile Include="SpaceMapTSS.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
