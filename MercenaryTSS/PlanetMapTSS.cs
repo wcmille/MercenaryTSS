@@ -25,6 +25,7 @@ namespace MercenaryTSS
         readonly Vector2 presenceRadius = new Vector2(19 * 2 + 1, 19 * 2 + 1);
         readonly RadioUtil ru = new RadioUtil();
         readonly float markerSize = 5.0f;
+        private double minDist2 = 1000.0*1000.0;
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -198,26 +199,38 @@ namespace MercenaryTSS
                 {
                     if (sig != null && sig.ShowOnHud)
                     {
-                        var sprite = new MySprite()
+                        if ((sig.BroadcastPosition - TerminalBlock.GetPosition()).LengthSquared() > minDist2)
                         {
-                            Type = SpriteType.TEXTURE,
-                            Data = "SquareSimple",
-                            Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-                            Size = new Vector2(markerSize, markerSize),
-                            Color = Color.Red,
-                            Alignment = TextAlignment.CENTER,
-                        };
-                        var backGround = new MySprite()
-                        {
-                            Type = SpriteType.TEXTURE,
-                            Data = "SquareSimple",
-                            Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-                            Size = new Vector2(markerSize+2, markerSize+2),
-                            Color = Color.Black,
-                            Alignment = TextAlignment.CENTER,
-                        };
-                        frame.Add(backGround);
-                        frame.Add(sprite);
+                            var relation = lhp.GetRelationTo(sig.Owner);
+                            Color color;
+                            if (relation == MyRelationsBetweenPlayerAndBlock.Enemies) color = Color.Red;
+                            else if (relation == MyRelationsBetweenPlayerAndBlock.Owner) color = Color.LightSkyBlue;
+                            else if (relation == MyRelationsBetweenPlayerAndBlock.Neutral) color = Color.White;
+                            else if (relation == MyRelationsBetweenPlayerAndBlock.Friends) color = Color.Green;
+                            else if (relation == MyRelationsBetweenPlayerAndBlock.FactionShare) color = Color.Green;
+                            else color = Color.Orange;
+
+                            var sprite = new MySprite()
+                            {
+                                Type = SpriteType.TEXTURE,
+                                Data = "SquareSimple",
+                                Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
+                                Size = new Vector2(markerSize, markerSize),
+                                Color = color,
+                                Alignment = TextAlignment.CENTER,
+                            };
+                            var backGround = new MySprite()
+                            {
+                                Type = SpriteType.TEXTURE,
+                                Data = "SquareSimple",
+                                Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
+                                Size = new Vector2(markerSize + 2, markerSize + 2),
+                                Color = Color.Black,
+                                Alignment = TextAlignment.CENTER,
+                            };
+                            frame.Add(backGround);
+                            frame.Add(sprite);
+                        }
                     }
                 }
             }
