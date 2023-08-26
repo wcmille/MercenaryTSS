@@ -1,12 +1,8 @@
 ﻿using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Character;
-using Sandbox.Game.GameSystems;
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
 using System;
-using System.Collections.Generic;
 using VRage.Game;
-using VRage.Game.Entity;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -27,6 +23,8 @@ namespace MercenaryTSS
         readonly string textureMapBase = "GVK_KharakMercator";
         readonly RectangleF viewPort; 
         readonly Vector2 presenceRadius = new Vector2(19 * 2 + 1, 19 * 2 + 1);
+        readonly RadioUtil ru = new RadioUtil();
+        readonly float markerSize = 5.0f;
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -47,6 +45,9 @@ namespace MercenaryTSS
                 y = x * 0.5f;
             }
             presenceRadius *= y / 512.0f;
+            
+            var minSurf = Math.Min(surface.TextureSize.X,surface.TextureSize.Y);
+            if (minSurf <= 257) markerSize = 2.5f;
             var ss = new Vector2(x,y);
             viewPort = new RectangleF((surface.TextureSize - ss) / 2f, ss);
         }
@@ -164,7 +165,7 @@ namespace MercenaryTSS
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
                             Position = GPSToVector(g.Coords - center, viewPort),
-                            Size = new Vector2(5, 5),
+                            Size = new Vector2(markerSize, markerSize),
                             Color = g.GPSColor,
                             Alignment = TextAlignment.CENTER,
                             RotationOrScale = (float)Math.PI / 4.0f
@@ -174,7 +175,7 @@ namespace MercenaryTSS
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
                             Position = GPSToVector(g.Coords - center, viewPort),
-                            Size = new Vector2(7, 7),
+                            Size = new Vector2(markerSize+2, markerSize+2),
                             Color = Color.Black,
                             Alignment = TextAlignment.CENTER,
                             RotationOrScale = (float)Math.PI / 4.0f
@@ -191,14 +192,9 @@ namespace MercenaryTSS
             var lhp = MyAPIGateway.Session.LocalHumanPlayer;
             if (lhp != null)
             {
-                var pid = lhp.IdentityId;
-                MyDataReceiver r;
-                //HashSet<MyDataBroadcaster> sigList = MyAntennaSystem.Static.GetAllRelayedBroadcasters(pid, ref sigList, pid);
-                var charRadio = lhp.Character.Components.Get<MyDataReceiver>();
-                //HashSet<MyDataBroadcaster> sigList = MyAntennaSystem.Static.GetAllRelayedBroadcasters((MyEntity)lhp, pid);
-                GetAllRelayedBroadcasters(charRadio, pid, false, null);
+                ru.GetAllRelayedBroadcasters(lhp);
 
-                foreach (var sig in radioBroadcasters)
+                foreach (var sig in ru.radioBroadcasters)
                 {
                     if (sig != null && sig.ShowOnHud)
                     {
@@ -207,7 +203,7 @@ namespace MercenaryTSS
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
                             Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-                            Size = new Vector2(5, 5),
+                            Size = new Vector2(markerSize, markerSize),
                             Color = Color.Red,
                             Alignment = TextAlignment.CENTER,
                         };
@@ -216,39 +212,12 @@ namespace MercenaryTSS
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
                             Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-                            Size = new Vector2(7, 7),
+                            Size = new Vector2(markerSize+2, markerSize+2),
                             Color = Color.Black,
                             Alignment = TextAlignment.CENTER,
                         };
                         frame.Add(backGround);
                         frame.Add(sprite);
-                    }
-                }
-            }
-        }
-
-        private HashSet<MyDataBroadcaster> radioBroadcasters = new HashSet<MyDataBroadcaster>();
-        private HashSet<long> tmpEntitiesOnHUD = new HashSet<long>();
-        private List<IMyTerminalBlock> dummyTerminalList = new List<IMyTerminalBlock>(0); // always empty
-
-        // HACK: copied from MyAntennaSystem.GetAllRelayedBroadcasters(MyDataReceiver receiver, ...)
-        private void GetAllRelayedBroadcasters(MyDataReceiver receiver, long identityId, bool mutual, HashSet<MyDataBroadcaster> output = null)
-        {
-            if (output == null)
-            {
-                output = radioBroadcasters;
-                output.Clear();
-            }
-
-            foreach (MyDataBroadcaster current in receiver.BroadcastersInRange)
-            {
-                if (!output.Contains(current) && !current.Closed && (!mutual || (current.Receiver != null && receiver.Broadcaster != null && current.Receiver.BroadcastersInRange.Contains(receiver.Broadcaster))))
-                {
-                    output.Add(current);
-
-                    if (current.Receiver != null && current.CanBeUsedByPlayer(identityId))
-                    {
-                        GetAllRelayedBroadcasters(current.Receiver, identityId, mutual, output);
                     }
                 }
             }

@@ -95,7 +95,8 @@ namespace MercenaryTSS
             sd.DrawSection(ref frame, pw, "IconEnergy", Surface.ScriptForegroundColor);
             sd.DrawSection(ref frame, gw, "IconHydrogen", Surface.ScriptForegroundColor);
             sd.DrawSection(ref frame, ogw, "IconOxygen", Surface.ScriptForegroundColor);
-            sd.DrawCargo(ref frame, cw, Surface.ScriptForegroundColor);
+            sd.DrawCargo(ref frame, Surface.ScriptForegroundColor, "Ore/Ice", ()=>cw.Ice(), ()=>cw.IceBingo());
+            sd.DrawCargo(ref frame, Surface.ScriptForegroundColor, "Ingot/Uranium", () => cw.Uranium(), ()=>cw.UraniumBingo());
         }
 
         private void DrawError(Exception e)
@@ -166,12 +167,12 @@ namespace MercenaryTSS
                 pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
             }
 
-            public void DrawCargo(ref MySpriteDrawFrame frame, CargoWatcher cw, Color foreground)
+            public void DrawCargo(ref MySpriteDrawFrame frame, Color foreground, string resource, Func<float> amt, Func<float> bingoF)
             {
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
-                    Data = "MyObjectBuilder_Ore/Ice",
+                    Data = $"MyObjectBuilder_{resource}",
                     Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
                     Size = new Vector2(iconWide, iconWide),
                     Color = foreground,
@@ -181,19 +182,8 @@ namespace MercenaryTSS
 
                 sprite = new MySprite
                 {
-                    Type = SpriteType.TEXTURE,
-                    Data = "MyObjectBuilder_Ingot/Uranium",
-                    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y + iconWide),
-                    Size = new Vector2(iconWide, iconWide),
-                    Color = foreground,
-                    Alignment = TextAlignment.CENTER
-                };
-                frame.Add(sprite);
-
-                sprite = new MySprite
-                {
                     Type = SpriteType.TEXT,
-                    Data = text,
+                    Data = resource.Remove(0,resource.IndexOf('/')+1),
                     Position = pen,
                     Color = foreground,
                     FontId = font,
@@ -201,11 +191,11 @@ namespace MercenaryTSS
                     Alignment = TextAlignment.LEFT
                 };
                 frame.Add(sprite);
-                
+
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXT,
-                    Data = $"{KiloFormat(cw.Ice())} kg\n\n{KiloFormat(cw.Uranium())} kg",
+                    Data = $"{KiloFormat(amt())} kg",
                     Position = pen + offset,
                     Color = foreground,
                     FontId = font,
@@ -213,6 +203,34 @@ namespace MercenaryTSS
                     Alignment = TextAlignment.RIGHT
                 };
                 frame.Add(sprite);
+
+                var bingo = bingoF();
+                if (bingo < -0.00001f)
+                {
+                    sprite = new MySprite
+                    {
+                        Type = SpriteType.TEXT,
+                        Data = $"Depleted in {TimeFormat(Math.Abs(bingo))}",
+                        Position = pen + new Vector2(barLength,0),
+                        Color = foreground,
+                        FontId = font,
+                        RotationOrScale = scale,
+                        Alignment = TextAlignment.RIGHT
+                    };
+                    frame.Add(sprite);
+                }
+
+                pen.Y += iconWide;
+                //sprite = new MySprite
+                //{
+                //    Type = SpriteType.TEXTURE,
+                //    Data = "MyObjectBuilder_Ingot/Uranium",
+                //    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
+                //    Size = new Vector2(iconWide, iconWide),
+                //    Color = foreground,
+                //    Alignment = TextAlignment.CENTER
+                //};
+                //frame.Add(sprite);               
             }
 
             public void DrawSection(ref MySpriteDrawFrame frame, IWatcher pw, string icon, Color foreground)
@@ -548,19 +566,33 @@ namespace MercenaryTSS
             readonly List<VRage.Game.ModAPI.Ingame.MyInventoryItem> inventoryItems = new List<VRage.Game.ModAPI.Ingame.MyInventoryItem>();
             readonly Dictionary<string, int> cargo = new Dictionary<string, int>();
             //readonly VRage.Collections.DictionaryValuesReader<MyDefinitionId, MyDefinitionBase> myDefinitions;
-
+            DateTime lastTime;
+            private float iceBingo, oldIce;
+            private float uraniumBingo, oldUranium;
             readonly IMyTerminalBlock myTerminalBlock;
+            int refreshCount = 0;
 
             public CargoWatcher(IMyTerminalBlock terminalBlock)
             {
                 myTerminalBlock = terminalBlock;
                 cargo.Add("Ice", 0);
                 cargo.Add("Uranium", 0);
+                lastTime = DateTime.Now;
             }
 
             public float Ice()
             {
                 return cargo["Ice"];
+            }
+
+            public float IceBingo()
+            {
+                return iceBingo;
+            }
+
+            public float UraniumBingo()
+            {
+                return uraniumBingo;
             }
 
             public float Uranium()
@@ -569,6 +601,8 @@ namespace MercenaryTSS
             }
             public void Refresh()
             {
+                refreshCount++;
+
                 var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
                 var myFatBlocks = myCubeGrid.GetFatBlocks();
 
@@ -610,6 +644,25 @@ namespace MercenaryTSS
                             }
                         }
                     }
+                }
+                if (refreshCount % 6 == 0)
+                {
+                    var oldTime = lastTime;
+                    lastTime = DateTime.Now;
+                    var span = lastTime - oldTime;
+                    {
+                        var cIce = cargo["Ice"];
+                        float burnRate = (float)((cIce - oldIce) / span.TotalSeconds);
+                        iceBingo = (cIce != oldIce) ? (cIce / burnRate) : 0.0f;
+                        oldIce = cIce;
+                    }
+                    {
+                        var cUranium = cargo["Uranium"];
+                        float burnRate = (float)((cUranium - oldUranium) / span.TotalSeconds);
+                        uraniumBingo = (cUranium != oldUranium) ? (cUranium / burnRate) : 0.0f;
+                        oldUranium = cUranium;
+                    }
+                    refreshCount = 0;
                 }
             }
         }
