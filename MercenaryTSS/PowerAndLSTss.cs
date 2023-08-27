@@ -132,11 +132,13 @@ namespace MercenaryTSS
             readonly float margin = 25.0f;
             readonly float barLength = 256.0f;
             readonly RectangleF viewport;
-            readonly string text = "Ice:\n\nUranium:";
+            readonly string text = "Uranium 999k";
             readonly float scale = 0.7f;
             readonly string font = "White";
             readonly Vector2 offset;
             readonly float disabledAlpha = 0.1f;
+            readonly float textHeight;
+            readonly float length100P;
 
             Vector2 pen;
             MySprite sprite;
@@ -150,19 +152,21 @@ namespace MercenaryTSS
                 margin = Math.Min(barHeight, 0.05f*viewport.Width);
                 iconWide = barHeight * 1.5f;
                 //barHeight = 0.04f * viewport.Height;
-                barLength = viewport.Width - margin * 2.0f - iconWide * 2.0f;
                 StringBuilder b = new StringBuilder(text);
-                StringBuilder c = new StringBuilder("9999999");
-                offset = surface.MeasureStringInPixels(c, font, 1.0f);
+                offset = surface.MeasureStringInPixels(b, font, 1.0f);
                 scale = barHeight / offset.Y;
+                textHeight = offset.Y;
 
-                offset = surface.MeasureStringInPixels(b, font, scale) + surface.MeasureStringInPixels(c, font, scale);
+                offset = surface.MeasureStringInPixels(b, font, scale);
                 offset.Y = 0;
+                b = new StringBuilder(" 100 %");
+                length100P = surface.MeasureStringInPixels(b, font, scale).X;
+                barLength = viewport.Width - margin * 2.0f - iconWide - length100P;
             }
 
             public void Reset()
             {
-                pen = viewport.Position + new Vector2(margin + iconWide, margin);
+                pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
             }
 
             public void DrawCargo(ref MySpriteDrawFrame frame, Color foreground, string resource, Func<float> amt, Func<float> bingoF)
@@ -193,7 +197,7 @@ namespace MercenaryTSS
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXT,
-                    Data = $"{KiloFormat(amt())} kg",
+                    Data = $"{KiloFormat(amt())}",
                     Position = pen + offset,
                     Color = foreground,
                     FontId = font,
@@ -208,8 +212,8 @@ namespace MercenaryTSS
                     sprite = new MySprite
                     {
                         Type = SpriteType.TEXT,
-                        Data = $"Depleted in {TimeFormat(Math.Abs(bingo))}",
-                        Position = pen + new Vector2(barLength,0),
+                        Data = $"Empty in {TimeFormat(Math.Abs(bingo))}",
+                        Position = pen + new Vector2(barLength, 0),
                         Color = foreground,
                         FontId = font,
                         RotationOrScale = scale,
@@ -230,7 +234,7 @@ namespace MercenaryTSS
                 {
                     Type = SpriteType.TEXTURE,
                     Data = icon,
-                    Position = new Vector2((margin + iconWide) * 0.5f, barHeight * 3.125f * 0.5f + pen.Y - iconWide * 0.5f),
+                    Position = new Vector2((margin + iconWide) * 0.5f, barHeight * ((0.5f * 3.125f) - 0.5f) + pen.Y),
                     Size = new Vector2(iconWide, iconWide),
                     Color = foreground,
                     Alignment = TextAlignment.CENTER
@@ -276,6 +280,24 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
+                //Indicate Scale
+                var ccap = pw.CalcCapacity();
+                if (!float.IsNaN(ccap))
+                {
+                    sprite = new MySprite
+                    {
+                        Type = SpriteType.TEXT,
+                        Data = $"{ccap:P0}",
+                        Position = new Vector2(pen.X + barLength + length100P, pen.Y - barHeight * 0.5f),
+                        Color = foreground,
+                        FontId = font,
+                        RotationOrScale = scale,
+                        Alignment = TextAlignment.RIGHT
+                    };
+                    frame.Add(sprite);
+                }
+
+
                 pen.Y += barHeight * 1.125f;
                 //Draw Total Frame
                 sprite = new MySprite
@@ -289,13 +311,21 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
+                var cp = pw.CalcProduce();
+                var cc = pw.CalcConsume();
+                var max = Math.Max(cp, cc);
+                var log = Math.Max(0.0f, Math.Ceiling(Math.Log10(max)));
+                max = (float)Math.Pow(10.0f, log);
+                cc /= max;
+                cp /= max;
+
                 //Draw Total Produce
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * pw.CalcProduce(), barHeight),
+                    Size = new Vector2(barLength * cp, barHeight),
                     Color = Color.Blue.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -308,7 +338,7 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Data = "SquareSimple",
                     Position = pen,
-                    Size = new Vector2(barLength * pw.CalcConsume(), barHeight),
+                    Size = new Vector2(barLength * cc, barHeight),
                     Color = Color.Red.Alpha(0.66f),
                     Alignment = TextAlignment.LEFT
                 };
@@ -317,8 +347,8 @@ namespace MercenaryTSS
                 float bingo = pw.CalcBingo();
                 //Draw Bingo Text
 
-                string dep = "Depleted";
-                string rech = "Recharged";
+                string dep = "Empty";
+                string rech = "Full";
 
                 if (Math.Abs(bingo) > 0.00001f)
                 {
@@ -329,12 +359,26 @@ namespace MercenaryTSS
                         Data = $"{t} in {TimeFormat(Math.Abs(bingo))}",
                         Position = new Vector2(pen.X + barLength, pen.Y - (barHeight * (bingo < 0.0f ? 0.5f : 1.5f))),
                         Color = bingo > 0.0f ? Color.Black : foreground,
-                        FontId = "White",
+                        FontId = font,
                         RotationOrScale = scale,
                         Alignment = TextAlignment.RIGHT
                     };
                     frame.Add(sprite);
                 }
+
+                //Indicate Scale
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXT,
+                    Data = $"{MFormat(max * 1000000.0f)}",
+                    Position = new Vector2(pen.X + barLength + length100P, pen.Y - barHeight),
+                    Color = foreground,
+                    FontId = font,
+                    RotationOrScale = scale,
+                    Alignment = TextAlignment.RIGHT
+                };
+                frame.Add(sprite);
+
                 pen.Y += barHeight * 2;
             }
 
@@ -343,9 +387,26 @@ namespace MercenaryTSS
                 if (seconds < 1.0) return $"{seconds * 1000:F0}ms";
                 if (seconds < 10.0) return $"{seconds:F1}s";
                 if (seconds < 100) return $"{seconds:F0}s";
-                if (seconds < 90 * 60) return $"{(seconds / 60.0):F0}m";
-                if (seconds < 3600 * 36) return $"{(seconds / 3600.0):F0}h";
-                return $"{(seconds / (3600.0 * 24)):F0}d";
+                if (seconds < 90 * 60) return $"{seconds / 60.0:F0}m";
+                if (seconds < 3600 * 36) return $"{seconds / 3600.0:F0}h";
+                return $"{seconds / (3600.0 * 24):F0}d";
+            }
+
+            static string MFormat(float num)
+            {
+                if (num >= 1000000000000)
+                    return (num / 1000000000000).ToString("#,0T");
+
+                if (num >= 1000000000)
+                    return (num / 1000000000).ToString("#,0G");
+
+                if (num >= 1000000)
+                    return (num / 1000000).ToString("#,0M");
+
+                if (num >= 1000)
+                    return (num / 1000).ToString("#,0k");
+
+                return num.ToString("#,0");
             }
 
             static string KiloFormat(float num)
@@ -357,7 +418,7 @@ namespace MercenaryTSS
                     return (num / 1000000).ToString("0.#") + "M";
 
                 if (num >= 100000)
-                    return (num / 1000).ToString("#,0K");
+                    return (num / 1000).ToString("#,0k");
 
                 if (num >= 10000)
                     return (num / 1000).ToString("0.#") + "k";

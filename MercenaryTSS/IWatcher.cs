@@ -66,7 +66,7 @@ namespace MercenaryTSS
                     current += c.CurrentInputByType(gasId);
                 }
             }
-            return current / total;
+            return current;
         }
 
         public float CalcConsume()
@@ -82,7 +82,7 @@ namespace MercenaryTSS
                     total += c.MaxOutput;
                 }
             }
-            return current / total;
+            return current;
         }
 
         public float CalcBingo()
@@ -154,12 +154,12 @@ namespace MercenaryTSS
 
         public float CalcProduce()
         {
-            return produce / maxOut;
+            return produce;
         }
 
         public float CalcConsume()
         {
-            return consume / maxOut;
+            return consume;
         }
 
         public float CalcBingo()
