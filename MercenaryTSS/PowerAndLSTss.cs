@@ -136,6 +136,7 @@ namespace MercenaryTSS
             readonly float scale = 0.7f;
             readonly string font = "White";
             readonly Vector2 offset;
+            readonly float disabledAlpha = 0.1f;
 
             Vector2 pen;
             MySprite sprite;
@@ -216,24 +217,14 @@ namespace MercenaryTSS
                     frame.Add(sprite);
                 }
 
-                pen.Y += iconWide;
-                //sprite = new MySprite
-                //{
-                //    Type = SpriteType.TEXTURE,
-                //    Data = "MyObjectBuilder_Ingot/Uranium",
-                //    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
-                //    Size = new Vector2(iconWide, iconWide),
-                //    Color = foreground,
-                //    Alignment = TextAlignment.CENTER
-                //};
-                //frame.Add(sprite);               
+                pen.Y += iconWide;          
             }
 
             public void DrawSection(ref MySpriteDrawFrame frame, IWatcher pw, string icon, Color foreground)
             {
                 Color backbar = new Color(foreground.ToVector3() * 0.25f);
 
-                //Draw Backbar
+                //Draw Icon
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
@@ -245,6 +236,7 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
+                //Draw Backbar
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
@@ -269,6 +261,19 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
+                var offset = new Vector2(barLength*cap, 0);
+                cap = pw.CalcUnusable();
+                //Draw Potential Power Remaining
+                sprite = new MySprite
+                {
+                    Type = SpriteType.TEXTURE,
+                    Data = "SquareSimple",
+                    Position = pen + offset,
+                    Size = new Vector2(barLength * cap , barHeight),
+                    Color = foreground.Alpha(disabledAlpha),
+                    Alignment = TextAlignment.LEFT
+                };
+                frame.Add(sprite);
 
                 pen.Y += y;
                 //Draw Total Frame
@@ -283,7 +288,7 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
-                //Draw Total Consume
+                //Draw Total Produce
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
@@ -309,7 +314,7 @@ namespace MercenaryTSS
                 frame.Add(sprite);
 
                 float bingo = pw.CalcBingo();
-                //Draw Power Remaining
+                //Draw Bingo Text
 
                 string dep = "Depleted";
                 string rech = "Recharged";

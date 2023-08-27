@@ -15,6 +15,7 @@ namespace MercenaryTSS
     {
         float CalcBingo();
         float CalcCapacity();
+        float CalcUnusable();
         float CalcProduce();
         float CalcConsume();
         void Refresh();
@@ -37,6 +38,11 @@ namespace MercenaryTSS
             var current = h2Tanks.Sum(x => (float)x.FilledRatio * x.Capacity);
             var total = h2Tanks.Sum(x => x.Capacity);
             return current / total;
+        }
+
+        public float CalcUnusable()
+        {
+            return 0.0f;
         }
 
         public float CalcProduce()
@@ -129,7 +135,7 @@ namespace MercenaryTSS
         //readonly List<IMySolarPanel> solarPanels = new List<IMySolarPanel>();
         //readonly List<IMyReactor> reactors = new List<IMyReactor>();
 
-        float max, capacity, produce, consume, maxOut;
+        float max, capacity, produce, consume, maxOut, potentialCap;
 
         public PowerWatcher(IMyTerminalBlock myTerminalBlock)
         {
@@ -139,6 +145,11 @@ namespace MercenaryTSS
         public float CalcCapacity()
         {
             return capacity / max;
+        }
+
+        public float CalcUnusable()
+        {
+            return potentialCap/max;
         }
 
         public float CalcProduce()
@@ -168,7 +179,7 @@ namespace MercenaryTSS
             //reactors.Clear();
 
             var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
-            var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsWorking);
+            var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsFunctional);
             foreach (var myBlock in myFatBlocks)
             {
                 if (myBlock is IMyBatteryBlock)
@@ -199,8 +210,15 @@ namespace MercenaryTSS
                 }
             }
 
-            max = batteryBlocks.Sum(x => x.MaxStoredPower);
-            capacity = batteryBlocks.Sum(x => x.CurrentStoredPower);
+            capacity = 0;
+            potentialCap = 0;
+            max = 0;
+            foreach (var bat in batteryBlocks)
+            {
+                if (bat.IsWorking) capacity += bat.CurrentStoredPower;
+                else potentialCap += bat.CurrentStoredPower;
+                max += bat.MaxStoredPower;
+            }
             produce = hydroEngines.Sum(x => x.CurrentOutput);
             consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
             maxOut = batteryBlocks.Sum(x => x.MaxOutput);
