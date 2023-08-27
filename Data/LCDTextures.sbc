@@ -3,8 +3,8 @@
   <LCDTextures>
     <LCDTextureDefinition>
       <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercatorZones" />
-      <TexturePath>Textures\Sprites\KharakS5ZoneColors.dds</TexturePath>
-      <SpritePath>Textures\Sprites\KharakS5ZoneColors.dds</SpritePath>
+      <TexturePath>Textures\Sprites\KharakS5ZoneColors2.dds</TexturePath>
+      <SpritePath>Textures\Sprites\KharakS5ZoneColors2.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
     <LCDTextureDefinition>
