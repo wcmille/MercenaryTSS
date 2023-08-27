@@ -154,12 +154,12 @@ namespace MercenaryTSS
 
         public float CalcProduce()
         {
-            return produce;
+            return produce * 1000000.0f;
         }
 
         public float CalcConsume()
         {
-            return consume;
+            return consume * 1000000.0f;
         }
 
         public float CalcBingo()

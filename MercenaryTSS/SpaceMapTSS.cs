@@ -79,6 +79,7 @@ namespace MercenaryTSS
             var p = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition());
 
             //foreach (var p in MyPlanets.GetPlanets())
+            if (p != null)
             {
                 var pos = p.PositionComp.GetPosition();
                 var posT = TransformPos(pos);
@@ -90,8 +91,8 @@ namespace MercenaryTSS
                     Size=new Vector2(p.AverageRadius * 2.0f * scale),
                     Alignment = TextAlignment.CENTER
                 };
+                frame.Add(sprite);
             }
-            frame.Add(sprite);
 
             DrawGPS(ref frame);
         }

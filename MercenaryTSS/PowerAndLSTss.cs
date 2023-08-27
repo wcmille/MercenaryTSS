@@ -370,7 +370,7 @@ namespace MercenaryTSS
                 sprite = new MySprite
                 {
                     Type = SpriteType.TEXT,
-                    Data = $"{MFormat(max * 1000000.0f)}",
+                    Data = $"{MFormat(max)}",
                     Position = new Vector2(pen.X + barLength + length100P, pen.Y - barHeight),
                     Color = foreground,
                     FontId = font,
