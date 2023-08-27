@@ -126,7 +126,7 @@ namespace MercenaryTSS
 
         class SpriteDrawer
         {
-            readonly float y = 25;
+            //readonly float y = 25;
             readonly float barHeight = 20.0f;
             readonly float iconWide = 32.0f;
             readonly float margin = 25.0f;
@@ -145,10 +145,11 @@ namespace MercenaryTSS
             {
                 this.viewport = viewport;
 
-                margin = 0.05f * viewport.Width;
-                y = margin;
-                barHeight = 0.04f * viewport.Height;
-                iconWide = 0.0625f * viewport.Width;
+                //margin = 0.05f * viewport.Width;               
+                barHeight = viewport.Height / ((4.125f * 3.0f) + 5.0f);
+                margin = Math.Min(barHeight, 0.05f*viewport.Width);
+                iconWide = barHeight * 1.5f;
+                //barHeight = 0.04f * viewport.Height;
                 barLength = viewport.Width - margin * 2.0f - iconWide * 2.0f;
                 StringBuilder b = new StringBuilder(text);
                 StringBuilder c = new StringBuilder("9999999");
@@ -161,7 +162,7 @@ namespace MercenaryTSS
 
             public void Reset()
             {
-                pen = viewport.Position + new Vector2(margin + iconWide, margin + barHeight * 0.5f);
+                pen = viewport.Position + new Vector2(margin + iconWide, margin);
             }
 
             public void DrawCargo(ref MySpriteDrawFrame frame, Color foreground, string resource, Func<float> amt, Func<float> bingoF)
@@ -170,7 +171,7 @@ namespace MercenaryTSS
                 {
                     Type = SpriteType.TEXTURE,
                     Data = $"MyObjectBuilder_{resource}",
-                    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
+                    Position = new Vector2((margin + iconWide) * 0.5f, iconWide * 0.5f + pen.Y),
                     Size = new Vector2(iconWide, iconWide),
                     Color = foreground,
                     Alignment = TextAlignment.CENTER
@@ -229,7 +230,7 @@ namespace MercenaryTSS
                 {
                     Type = SpriteType.TEXTURE,
                     Data = icon,
-                    Position = new Vector2((margin + iconWide) * 0.5f, (barHeight * 3.0f - y) * 0.5f + pen.Y),
+                    Position = new Vector2((margin + iconWide) * 0.5f, barHeight * 3.125f * 0.5f + pen.Y - iconWide * 0.5f),
                     Size = new Vector2(iconWide, iconWide),
                     Color = foreground,
                     Alignment = TextAlignment.CENTER
@@ -275,7 +276,7 @@ namespace MercenaryTSS
                 };
                 frame.Add(sprite);
 
-                pen.Y += y;
+                pen.Y += barHeight * 1.125f;
                 //Draw Total Frame
                 sprite = new MySprite
                 {
@@ -334,7 +335,7 @@ namespace MercenaryTSS
                     };
                     frame.Add(sprite);
                 }
-                pen.Y += 2 * y;
+                pen.Y += barHeight * 2;
             }
 
             public static string TimeFormat(double seconds)

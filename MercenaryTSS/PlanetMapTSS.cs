@@ -25,7 +25,7 @@ namespace MercenaryTSS
         readonly Vector2 presenceRadius = new Vector2(19 * 2 + 1, 19 * 2 + 1);
         readonly RadioUtil ru = new RadioUtil();
         readonly float markerSize = 5.0f;
-        private double minDist2 = 1000.0*1000.0;
+        private const double minDist2 = 1000.0*1000.0;
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -127,12 +127,24 @@ namespace MercenaryTSS
             var sprite = new MySprite()
             {
                 Type = SpriteType.TEXTURE,
+                Data = "SquareSimple",
+                Alignment = TextAlignment.CENTER,
+                Size = new Vector2(viewPort.Width, viewPort.Height),
+                Color = Color.Black
+            };
+            // Add the sprite to the frame
+            frame.Add(sprite);
+
+            sprite = new MySprite()
+            {
+                Type = SpriteType.TEXTURE,
                 Data = textureMapBase,
                 Alignment = TextAlignment.CENTER,
                 Size = new Vector2(viewPort.Width, viewPort.Height)
             };
             // Add the sprite to the frame
             frame.Add(sprite);
+            // Create background sprite
         }
 
         void DrawLoc(MySpriteDrawFrame frame, Vector2 pos)
