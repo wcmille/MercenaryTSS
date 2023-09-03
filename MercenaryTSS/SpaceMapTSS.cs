@@ -2,6 +2,7 @@
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
@@ -17,10 +18,9 @@ namespace MercenaryTSS
     {
         private readonly IMyTerminalBlock TerminalBlock;
         readonly RectangleF viewport;
-        Point originOffset = new Point(131000,5700000);
-        //Point originOffset = new Point(-870000, 7300000);
+        Point originOffset = new Point(131000, 5700000);
         float scale = 0.0025f;
-        //float scale = 0.0001f;
+        readonly HashSet<MyPlanet> planets = new HashSet<MyPlanet>();
 
         public SpaceMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -28,6 +28,13 @@ namespace MercenaryTSS
             TerminalBlock.OnMarkForClose += BlockMarkedForClose;
 
             viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f, surface.SurfaceSize);
+
+            HashSet<IMyEntity> ents = new HashSet<IMyEntity>();
+            MyAPIGateway.Entities.GetEntities(ents);
+            foreach (var e in ents)
+            {
+                if (e is MyPlanet) planets.Add(e as MyPlanet);
+            }
         }
 
         public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update100;
@@ -76,10 +83,10 @@ namespace MercenaryTSS
             };
             frame.Add(sprite);
 
-            var p = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition());
+            //var p = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition());
 
-            //foreach (var p in MyPlanets.GetPlanets())
-            if (p != null)
+            foreach (var p in planets)
+            //if (p != null)
             {
                 var pos = p.PositionComp.GetPosition();
                 var posT = TransformPos(pos);
@@ -88,12 +95,11 @@ namespace MercenaryTSS
                     Type = SpriteType.TEXTURE,
                     Position = posT,
                     Data = "Circle",
-                    Size=new Vector2(p.AverageRadius * 2.0f * scale),
+                    Size=new Vector2((p as MyPlanet).AverageRadius * 2.0f * scale),
                     Alignment = TextAlignment.CENTER
                 };
                 frame.Add(sprite);
             }
-
             DrawGPS(ref frame);
         }
 

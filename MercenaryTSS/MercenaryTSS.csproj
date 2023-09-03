@@ -116,10 +116,12 @@
     <Compile Include="IWatcher.cs" />
     <Compile Include="MercenaryTSS.cs" />
     <Compile Include="PlanetMapTSS.cs" />
+    <Compile Include="AlienTSS.cs" />
     <Compile Include="PlanetMapTSSZones.cs" />
     <Compile Include="PowerAndLSTss.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RadioUtil.cs" />
+    <Compile Include="DetailedInfoTSS.cs" />
     <Compile Include="SpaceMapTSS.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

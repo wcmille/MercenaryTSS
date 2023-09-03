@@ -2,15 +2,27 @@
 <Definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <LCDTextures>
     <LCDTextureDefinition>
-      <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercatorZones" />
+      <Id Type="LCDTextureDefinition" Subtype="GV_Zone_PertamKharak" />
       <TexturePath>Textures\Sprites\KharakS5ZoneColors2.dds</TexturePath>
       <SpritePath>Textures\Sprites\KharakS5ZoneColors2.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
     <LCDTextureDefinition>
-      <Id Type="LCDTextureDefinition" Subtype="GVK_KharakMercator" />
+      <Id Type="LCDTextureDefinition" Subtype="GV_Mercator_PertamKharak" />
       <TexturePath>Textures\Sprites\Kharak.dds</TexturePath>
       <SpritePath>Textures\Sprites\Kharak.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Zone_Alien" />
+      <TexturePath>Textures\Sprites\Alien.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Alien.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Mercator_Alien" />
+      <TexturePath>Textures\Sprites\Alien.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Alien.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
   </LCDTextures>

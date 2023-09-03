@@ -20,17 +20,17 @@ namespace MercenaryTSS
     public class PlanetMapTSS : MyTSSCommon
     {
         private readonly IMyTerminalBlock TerminalBlock;
-        readonly string textureMapBase = "GVK_KharakMercator";
-        readonly RectangleF viewPort; 
+        readonly string textureMapBase = "GV_Mercator_";
+        readonly RectangleF viewPort;
         readonly Vector2 presenceRadius = new Vector2(19 * 2 + 1, 19 * 2 + 1);
         readonly RadioUtil ru = new RadioUtil();
         readonly float markerSize = 5.0f;
-        private const double minDist2 = 1000.0*1000.0;
+        private const double minDist2 = 1000.0 * 1000.0;
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
             // internal stored m_block is the ingame interface which has no events, so can't unhook later on, therefore this field is required.
-            TerminalBlock = (IMyTerminalBlock)block; 
+            TerminalBlock = (IMyTerminalBlock)block;
 
             // required if you're gonna make use of Dispose() as it won't get called when block is removed or grid is cut/unloaded.
             TerminalBlock.OnMarkForClose += BlockMarkedForClose;
@@ -46,10 +46,10 @@ namespace MercenaryTSS
                 y = x * 0.5f;
             }
             presenceRadius *= y / 512.0f;
-            
-            var minSurf = Math.Min(surface.TextureSize.X,surface.TextureSize.Y);
+
+            var minSurf = Math.Min(surface.TextureSize.X, surface.TextureSize.Y);
             if (minSurf <= 257) markerSize = 2.5f;
-            var ss = new Vector2(x,y);
+            var ss = new Vector2(x, y);
             viewPort = new RectangleF((surface.TextureSize - ss) / 2f, ss);
         }
 
@@ -123,6 +123,13 @@ namespace MercenaryTSS
 
         void DrawMap(MySpriteDrawFrame frame)
         {
+            var planet = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition());
+            string name = "Alien";
+            if (planet != null)
+            {
+                name = planet.Name;
+            }
+
             // Create background sprite
             var sprite = new MySprite()
             {
@@ -138,13 +145,25 @@ namespace MercenaryTSS
             sprite = new MySprite()
             {
                 Type = SpriteType.TEXTURE,
-                Data = textureMapBase,
+                Data = textureMapBase + name,
                 Alignment = TextAlignment.CENTER,
                 Size = new Vector2(viewPort.Width, viewPort.Height)
             };
             // Add the sprite to the frame
             frame.Add(sprite);
             // Create background sprite
+
+            //sprite = new MySprite()
+            //{
+            //    Type = SpriteType.TEXT,
+            //    Data = name,
+            //    Alignment = TextAlignment.LEFT,
+            //    Color = Color.White,
+            //    FontId = "White",
+            //    RotationOrScale = 1.0f,
+            //    Position = new Vector2(0, 0),
+            //};
+            //frame.Add(sprite);
         }
 
         void DrawLoc(MySpriteDrawFrame frame, Vector2 pos)
@@ -188,7 +207,7 @@ namespace MercenaryTSS
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
                             Position = GPSToVector(g.Coords - center, viewPort),
-                            Size = new Vector2(markerSize+2, markerSize+2),
+                            Size = new Vector2(markerSize + 2, markerSize + 2),
                             Color = Color.Black,
                             Alignment = TextAlignment.CENTER,
                             RotationOrScale = (float)Math.PI / 4.0f
@@ -252,8 +271,8 @@ namespace MercenaryTSS
         {
             return new Vector2I
             {
-                X = (int)((viewport.Width / 2.0f + viewport.Width / 2 * -Math.Atan2(location.X, location.Z) / Math.PI)+viewport.X),
-                Y = (int)((viewport.Height / 2.0f - viewport.Height * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI)+viewport.Y)
+                X = (int)((viewport.Width / 2.0f + viewport.Width / 2 * -Math.Atan2(location.X, location.Z) / Math.PI) + viewport.X),
+                Y = (int)((viewport.Height / 2.0f - viewport.Height * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI) + viewport.Y)
             };
         }
         void DrawError(Exception e)
