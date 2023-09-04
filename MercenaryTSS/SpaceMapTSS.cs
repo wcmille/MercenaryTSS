@@ -10,7 +10,6 @@ using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
-
 namespace MercenaryTSS
 {
     [MyTextSurfaceScript("TSS_SpaceMap", "BMC Space Map")]
@@ -18,9 +17,16 @@ namespace MercenaryTSS
     {
         private readonly IMyTerminalBlock TerminalBlock;
         readonly RectangleF viewport;
-        Point originOffset = new Point(131000, 5700000);
-        float scale = 0.0025f;
-        readonly HashSet<MyPlanet> planets = new HashSet<MyPlanet>();
+        Vector3D originOffset = new Vector3D(131000, 5700000, 0);
+        const double scanRad = 20000;
+        readonly float pixelPerMeter = 0.0025f;
+        Vector3D scanSize = new Vector3D(scanRad, scanRad, scanRad);
+        readonly List<MyVoxelBase> planets = new List<MyVoxelBase>();
+        readonly IMyTextSurface surface;
+        readonly double gridTextureSize = 1024;
+        readonly double desiredSmallSquareSize;
+        readonly double gridScale;
+        readonly SigDraw sigDraw;
 
         public SpaceMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -29,12 +35,16 @@ namespace MercenaryTSS
 
             viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f, surface.SurfaceSize);
 
-            HashSet<IMyEntity> ents = new HashSet<IMyEntity>();
-            MyAPIGateway.Entities.GetEntities(ents);
-            foreach (var e in ents)
-            {
-                if (e is MyPlanet) planets.Add(e as MyPlanet);
-            }
+            pixelPerMeter = (float)(viewport.Width / (2.0 * scanRad));
+            //const double gridSpriteWidth = 2048;
+            const double smallSquaresInGrid = 23 * 3;
+            //const double smallSquareSizeOnTexture = 2048.0 / (23.0 * 4.0);
+            gridScale = 1000;
+            desiredSmallSquareSize = ((double)viewport.Width) / (2.0 * scanRad / gridScale); //in pixels
+            gridTextureSize = desiredSmallSquareSize * smallSquaresInGrid; //in pixels
+
+            this.surface = surface;
+            sigDraw = new SigDraw(TerminalBlock, TransformPos);
         }
 
         public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update100;
@@ -74,77 +84,107 @@ namespace MercenaryTSS
         private void Draw(ref MySpriteDrawFrame frame)
         {
             // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
+            DrawBaseLayer(ref frame);
+
+            originOffset = TerminalBlock.GetPosition();
+            //var p = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition());
+            DrawVoxels(ref frame);
+            sigDraw.DrawGPS(ref frame);
+            sigDraw.DrawSigs(ref frame);
+
+            var sprite = new MySprite
+            {
+                Type = SpriteType.TEXT,
+                Data = $"Scale: 1 sq = {3*gridScale}m",
+                Color = surface.ScriptForegroundColor,
+                Position = viewport.Position,
+                FontId = "White",
+                Alignment = TextAlignment.LEFT,
+                RotationOrScale = 0.5f
+            };
+            frame.Add(sprite);
+        }
+
+        private void DrawBaseLayer(ref MySpriteDrawFrame frame)
+        {
+            var drawPoint = viewport.Center;
+            drawPoint.Y += (float)desiredSmallSquareSize * 1.5f;
             var sprite = new MySprite
             {
                 Type = SpriteType.TEXTURE,
                 Data = "Grid",
-                Size = new Vector2(Math.Max(1024, 1024)),
-                Alignment = TextAlignment.CENTER
+                Size = new Vector2((float)gridTextureSize),
+                Alignment = TextAlignment.LEFT,
+                Color = surface.ScriptForegroundColor.Alpha(0.25f),
+                Position = drawPoint,
             };
             frame.Add(sprite);
 
-            //var p = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition());
-
-            foreach (var p in planets)
-            //if (p != null)
+            sprite = new MySprite
             {
-                var pos = p.PositionComp.GetPosition();
+                Type = SpriteType.TEXTURE,
+                Data = "Grid",
+                Size = new Vector2((float)gridTextureSize),
+                Alignment = TextAlignment.RIGHT,
+                Color = surface.ScriptForegroundColor.Alpha(0.25f),
+                Position = drawPoint,
+            };
+
+            frame.Add(sprite);
+            sprite = new MySprite
+            {
+                Type = SpriteType.TEXTURE,
+                Data = "CircleHollow",
+                Size = new Vector2(32),
+                Alignment = TextAlignment.CENTER,
+                Color = surface.ScriptForegroundColor.Alpha(0.25f),
+                //Position = drawPoint,
+            };
+            frame.Add(sprite);
+        }
+
+        private void DrawVoxels(ref MySpriteDrawFrame frame)
+        {
+            //try
+            //{
+            var box = new BoundingBoxD(originOffset - scanSize, originOffset + scanSize);
+            MyGamePruningStructure.GetAllVoxelMapsInBox(ref box, planets);
+            foreach (var p in planets)
+            {
+                var wv = ((VRage.Game.ModAPI.Ingame.IMyEntity)p).WorldVolume;
+                var pos = wv.Center;
                 var posT = TransformPos(pos);
-                sprite = new MySprite
+                float radius = (float)wv.Radius * 0.5f;
+                Color color = Color.DarkGray.Alpha(0.5f);
+                if (p is MyPlanet)
+                {
+                    color = surface.ScriptForegroundColor.Alpha(0.2f);
+                    radius = (p as MyPlanet).AverageRadius;
+                }
+                color = Color.Darken(color, 0.4);
+                var sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
                     Position = posT,
                     Data = "Circle",
-                    Size=new Vector2((p as MyPlanet).AverageRadius * 2.0f * scale),
-                    Alignment = TextAlignment.CENTER
+                    Size = new Vector2(radius * 2 * pixelPerMeter),
+                    Alignment = TextAlignment.CENTER,
+                    Color = color
                 };
                 frame.Add(sprite);
             }
-            DrawGPS(ref frame);
-        }
-
-        void DrawGPS(ref MySpriteDrawFrame frame)
-        {
-            var lhp = MyAPIGateway.Session.LocalHumanPlayer;
-            if (lhp != null)
-            {
-                var pid = lhp.IdentityId;
-                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(pid);
-                foreach (var g in gpsList)
-                {
-                    if (g != null && g.ShowOnHud)
-                    {
-                        var sprite = new MySprite()
-                        {
-                            Type = SpriteType.TEXTURE,
-                            Data = "SquareSimple",
-                            Position = TransformPos(g.Coords),
-                            Size = new Vector2(5, 5),
-                            Color = g.GPSColor,
-                            Alignment = TextAlignment.CENTER,
-                            RotationOrScale = (float)Math.PI / 4.0f
-                        };
-                        var backGround = new MySprite()
-                        {
-                            Type = SpriteType.TEXTURE,
-                            Data = "SquareSimple",
-                            Position = TransformPos(g.Coords),
-                            Size = new Vector2(7, 7),
-                            Color = Color.Black,
-                            Alignment = TextAlignment.CENTER,
-                            RotationOrScale = (float)Math.PI / 4.0f
-                        };
-                        frame.Add(backGround);
-                        frame.Add(sprite);
-                    }
-                }
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new Exception($"Line: {line}", ex);
+            //}
         }
 
         private Vector2 TransformPos(Vector3D pos)
         {
-            var result = new Vector2((float)pos.X - originOffset.X, (float)pos.Z-originOffset.Y);
-            result *= scale;
+            pos -= originOffset;
+            var result = new Vector2((float)pos.X, (float)pos.Z);
+            result *= pixelPerMeter;
             result += viewport.Center;
 
             return result;
