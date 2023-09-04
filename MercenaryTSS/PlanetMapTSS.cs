@@ -23,9 +23,11 @@ namespace MercenaryTSS
         readonly string textureMapBase = "GV_Mercator_";
         readonly RectangleF viewPort;
         readonly Vector2 presenceRadius = new Vector2(19 * 2 + 1, 19 * 2 + 1);
-        readonly RadioUtil ru = new RadioUtil();
-        readonly float markerSize = 5.0f;
-        private const double minDist2 = 1000.0 * 1000.0;
+        Vector3D center;
+        //readonly RadioUtil ru = new RadioUtil();
+        
+        //private const double minDist2 = 1000.0 * 1000.0;
+        readonly SigDraw sigDraw;
 
         public PlanetMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -48,9 +50,11 @@ namespace MercenaryTSS
             presenceRadius *= y / 512.0f;
 
             var minSurf = Math.Min(surface.TextureSize.X, surface.TextureSize.Y);
+            float markerSize = 5.0f;
             if (minSurf <= 257) markerSize = 2.5f;
             var ss = new Vector2(x, y);
             viewPort = new RectangleF((surface.TextureSize - ss) / 2f, ss);
+            sigDraw = new SigDraw(TerminalBlock, this.GPSToVector, markerSize);
         }
 
         protected PlanetMapTSS(string mapBase, IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : this(surface, block, size)
@@ -112,9 +116,9 @@ namespace MercenaryTSS
                 {
                     var pos = GPSToVector(-grav, viewPort);
                     DrawLoc(frame, pos);
-                    var planetPos = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition()).PositionComp.GetPosition();
-                    DrawGPS(frame, planetPos);
-                    DrawSigs(frame, planetPos);
+                    center = MyGamePruningStructure.GetClosestPlanet(TerminalBlock.GetPosition()).PositionComp.GetPosition();
+                    sigDraw.DrawGPS(ref frame);//, planetPos);
+                    sigDraw.DrawSigs(ref frame);//, planetPos);
                 }
                 // add more sprites and stuff
             }
@@ -139,7 +143,6 @@ namespace MercenaryTSS
                 Size = new Vector2(viewPort.Width, viewPort.Height),
                 Color = Color.Black
             };
-            // Add the sprite to the frame
             frame.Add(sprite);
 
             sprite = new MySprite()
@@ -149,21 +152,7 @@ namespace MercenaryTSS
                 Alignment = TextAlignment.CENTER,
                 Size = new Vector2(viewPort.Width, viewPort.Height)
             };
-            // Add the sprite to the frame
             frame.Add(sprite);
-            // Create background sprite
-
-            //sprite = new MySprite()
-            //{
-            //    Type = SpriteType.TEXT,
-            //    Data = name,
-            //    Alignment = TextAlignment.LEFT,
-            //    Color = Color.White,
-            //    FontId = "White",
-            //    RotationOrScale = 1.0f,
-            //    Position = new Vector2(0, 0),
-            //};
-            //frame.Add(sprite);
         }
 
         void DrawLoc(MySpriteDrawFrame frame, Vector2 pos)
@@ -181,98 +170,17 @@ namespace MercenaryTSS
             frame.Add(sprite);
         }
 
-        void DrawGPS(MySpriteDrawFrame frame, Vector3D center)
+        public Vector2 GPSToVector(Vector3D location)
         {
-            var lhp = MyAPIGateway.Session.LocalHumanPlayer;
-            if (lhp != null)
-            {
-                var pid = lhp.IdentityId;
-                var gpsList = MyAPIGateway.Session.GPS.GetGpsList(pid);
-                foreach (var g in gpsList)
-                {
-                    if (g != null && g.ShowOnHud)
-                    {
-                        var sprite = new MySprite()
-                        {
-                            Type = SpriteType.TEXTURE,
-                            Data = "SquareSimple",
-                            Position = GPSToVector(g.Coords - center, viewPort),
-                            Size = new Vector2(markerSize, markerSize),
-                            Color = g.GPSColor,
-                            Alignment = TextAlignment.CENTER,
-                            RotationOrScale = (float)Math.PI / 4.0f
-                        };
-                        var backGround = new MySprite()
-                        {
-                            Type = SpriteType.TEXTURE,
-                            Data = "SquareSimple",
-                            Position = GPSToVector(g.Coords - center, viewPort),
-                            Size = new Vector2(markerSize + 2, markerSize + 2),
-                            Color = Color.Black,
-                            Alignment = TextAlignment.CENTER,
-                            RotationOrScale = (float)Math.PI / 4.0f
-                        };
-                        frame.Add(backGround);
-                        frame.Add(sprite);
-                    }
-                }
-            }
+            return GPSToVector(location - center, viewPort);
         }
 
-        void DrawSigs(MySpriteDrawFrame frame, Vector3D center)
+        public static Vector2 GPSToVector(Vector3D location, RectangleF viewport)
         {
-            var lhp = MyAPIGateway.Session.LocalHumanPlayer;
-            if (lhp != null)
+            return new Vector2
             {
-                ru.GetAllRelayedBroadcasters(lhp);
-
-                foreach (var sig in ru.radioBroadcasters)
-                {
-                    if (sig != null && sig.ShowOnHud)
-                    {
-                        if ((sig.BroadcastPosition - TerminalBlock.GetPosition()).LengthSquared() > minDist2)
-                        {
-                            var relation = lhp.GetRelationTo(sig.Owner);
-                            Color color;
-                            if (relation == MyRelationsBetweenPlayerAndBlock.Enemies) color = Color.Red;
-                            else if (relation == MyRelationsBetweenPlayerAndBlock.Owner) color = Color.LightSkyBlue;
-                            else if (relation == MyRelationsBetweenPlayerAndBlock.Neutral) color = Color.White;
-                            else if (relation == MyRelationsBetweenPlayerAndBlock.Friends) color = Color.Green;
-                            else if (relation == MyRelationsBetweenPlayerAndBlock.FactionShare) color = Color.Green;
-                            else color = Color.Orange;
-
-                            var sprite = new MySprite()
-                            {
-                                Type = SpriteType.TEXTURE,
-                                Data = "SquareSimple",
-                                Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-                                Size = new Vector2(markerSize, markerSize),
-                                Color = color,
-                                Alignment = TextAlignment.CENTER,
-                            };
-                            var backGround = new MySprite()
-                            {
-                                Type = SpriteType.TEXTURE,
-                                Data = "SquareSimple",
-                                Position = GPSToVector(sig.BroadcastPosition - center, viewPort),
-                                Size = new Vector2(markerSize + 2, markerSize + 2),
-                                Color = Color.Black,
-                                Alignment = TextAlignment.CENTER,
-                            };
-                            frame.Add(backGround);
-                            frame.Add(sprite);
-                        }
-                    }
-                }
-            }
-        }
-
-        public static Vector2I GPSToVector(Vector3D location, RectangleF viewport)
-        {
-            return new Vector2I
-            {
-                X = (int)((viewport.Width / 2.0f + viewport.Width / 2 * -Math.Atan2(location.X, location.Z) / Math.PI) + viewport.X),
-                Y = (int)((viewport.Height / 2.0f - viewport.Height * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI) + viewport.Y)
+                X = (float)((viewport.Width / 2.0f + viewport.Width / 2.0f * -Math.Atan2(location.X, location.Z) / Math.PI) + viewport.X),
+                Y = (float)((viewport.Height / 2.0f - viewport.Height * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI) + viewport.Y)
             };
         }
         void DrawError(Exception e)

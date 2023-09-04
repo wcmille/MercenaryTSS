@@ -14,8 +14,9 @@ namespace MercenaryTSS
         readonly RadioUtil ru;
         readonly Func<Vector3D, Vector2> convertGPS;
 
-        public SigDraw(IMyTerminalBlock terminalBlock, Func<Vector3D, Vector2> convertGPS)
+        public SigDraw(IMyTerminalBlock terminalBlock, Func<Vector3D, Vector2> convertGPS, float markerSize)
         {
+            this.markerSize = markerSize;
             this.terminalBlock = terminalBlock;
             this.convertGPS = convertGPS;
             ru = new RadioUtil();

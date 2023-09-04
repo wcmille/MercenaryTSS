@@ -44,7 +44,7 @@ namespace MercenaryTSS
             gridTextureSize = desiredSmallSquareSize * smallSquaresInGrid; //in pixels
 
             this.surface = surface;
-            sigDraw = new SigDraw(TerminalBlock, TransformPos);
+            sigDraw = new SigDraw(TerminalBlock, TransformPos, 5.0f);
         }
 
         public override ScriptUpdate NeedsUpdate => ScriptUpdate.Update100;
