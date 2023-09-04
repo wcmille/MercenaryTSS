@@ -6,9 +6,9 @@ using VRageMath;
 namespace MercenaryTSS
 {
     [MyTextSurfaceScript("PlanetMapTSSZones", "Planet Map w Zones")]
-    public class PlanetMapTSSZones : PlanetMapTSS
+    public class PlanetMapZonesTSS : PlanetMapTSS
     {
-        public PlanetMapTSSZones(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base("GV_Zone_", surface, block, size)
+        public PlanetMapZonesTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base("GV_Zone_", surface, block, size)
         { }
     }
 }

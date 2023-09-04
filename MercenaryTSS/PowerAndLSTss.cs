@@ -10,20 +10,13 @@ using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
 
-//TODO: Don't show ice if there is no hydro anything (tanks, engines, (maybe ONLY) generators)
-//TODO: Don't show uranium if there is no reactors
 //TODO: Show stockpile, off, etc as on capacity.
-//TODO: Improve font alignment
-//TODO: Add Title on Square screens
-//TODO: Design 2x1 Layout
-//TODO: Improve text on 256px high screens
-//TODO: Design ultra wide layout. (4x1)
 //TODO: Why might red be negative?
 
 namespace MercenaryTSS
 {
     [MyTextSurfaceScript("PowerAndLSTss", "BMC Power & Life Support")]
-    public class PowerAndLSTss : MyTSSCommon
+    public class PowerAndLSTSS : MyTSSCommon
     {
         private readonly IMyTerminalBlock TerminalBlock;
         readonly RectangleF viewport;
@@ -33,7 +26,7 @@ namespace MercenaryTSS
         readonly CargoWatcher cw;
         readonly SpriteDrawer sd;
 
-        public PowerAndLSTss(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
+        public PowerAndLSTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
             TerminalBlock = (IMyTerminalBlock)block;
             TerminalBlock.OnMarkForClose += BlockMarkedForClose;

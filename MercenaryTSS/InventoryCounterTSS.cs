@@ -77,7 +77,7 @@ namespace BMC.MercenaryTSS
     //
     // The display name has localization support aswell, same as a block's DisplayName in SBC.
     [MyTextSurfaceScript("InventoryCounter", "BMC Inv Count")]
-    public class InventoryCounter : MyTSSCommon
+    public class InventoryCounterTSS : MyTSSCommon
     {      
         readonly IMyTextSurface mySurface;
         readonly IMyTerminalBlock myTerminalBlock;
@@ -98,7 +98,7 @@ namespace BMC.MercenaryTSS
         readonly ConfigIt configit;
 
 
-        public InventoryCounter(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
+        public InventoryCounterTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
             TerminalBlock = (IMyTerminalBlock)block; // internal stored m_block is the ingame interface which has no events, so can't unhook later on, therefore this field is required.
             TerminalBlock.OnMarkForClose += BlockMarkedForClose; // required if you're gonna make use of Dispose() as it won't get called when block is removed or grid is cut/unloaded.
