@@ -148,6 +148,7 @@ namespace MercenaryTSS
             //try
             //{
             var box = new BoundingBoxD(originOffset - scanSize, originOffset + scanSize);
+            planets.Clear();
             MyGamePruningStructure.GetAllVoxelMapsInBox(ref box, planets);
             foreach (var p in planets)
             {
