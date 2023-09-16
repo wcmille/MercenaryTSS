@@ -152,25 +152,31 @@ namespace MercenaryTSS
             MyGamePruningStructure.GetAllVoxelMapsInBox(ref box, planets);
             foreach (var p in planets)
             {
+                var data = "Circle";
                 var wv = ((VRage.Game.ModAPI.Ingame.IMyEntity)p).WorldVolume;
                 var pos = wv.Center;
                 var posT = TransformPos(pos);
                 float radius = (float)wv.Radius * 0.5f;
+                float rot = 0.0f;
                 Color color = Color.DarkGray.Alpha(0.5f);
                 if (p is MyPlanet)
                 {
-                    color = surface.ScriptForegroundColor.Alpha(0.2f);
+                    //color = surface.ScriptForegroundColor.Alpha(0.2f);
                     radius = (p as MyPlanet).AverageRadius;
+                    data = "GV_Polar_Alien";
+                    color = Color.White.Alpha(0.1f);
+                    rot = (float)Math.PI * 1.5f;
                 }
-                color = Color.Darken(color, 0.4);
+                else color = Color.Darken(color, 0.4);
                 var sprite = new MySprite
                 {
                     Type = SpriteType.TEXTURE,
                     Position = posT,
-                    Data = "Circle",
+                    Data = data,
                     Size = new Vector2(radius * 2 * pixelPerMeter),
                     Alignment = TextAlignment.CENTER,
-                    Color = color
+                    Color = color,
+                    RotationOrScale = rot,
                 };
                 frame.Add(sprite);
             }

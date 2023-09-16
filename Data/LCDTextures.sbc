@@ -15,14 +15,20 @@
     </LCDTextureDefinition>
     <LCDTextureDefinition>
       <Id Type="LCDTextureDefinition" Subtype="GV_Zone_Alien" />
-      <TexturePath>Textures\Sprites\Alien.dds</TexturePath>
-      <SpritePath>Textures\Sprites\Alien.dds</SpritePath>
+      <TexturePath>Textures\Sprites\AlienBiomeMercator.dds</TexturePath>
+      <SpritePath>Textures\Sprites\AlienBiomeMercator.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
     <LCDTextureDefinition>
       <Id Type="LCDTextureDefinition" Subtype="GV_Mercator_Alien" />
       <TexturePath>Textures\Sprites\Alien.dds</TexturePath>
       <SpritePath>Textures\Sprites\Alien.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_Alien" />
+      <TexturePath>Textures\Sprites\Pole1024T.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Pole1024T.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
   </LCDTextures>
