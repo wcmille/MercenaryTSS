@@ -130,10 +130,7 @@ namespace MercenaryTSS
     {
         readonly IMyTerminalBlock myTerminalBlock;
         readonly List<IMyBatteryBlock> batteryBlocks = new List<IMyBatteryBlock>();
-        //readonly List<IMyPowerProducer> windTurbines = new List<IMyPowerProducer>();
-        readonly List<IMyPowerProducer> hydroEngines = new List<IMyPowerProducer>();
-        //readonly List<IMySolarPanel> solarPanels = new List<IMySolarPanel>();
-        //readonly List<IMyReactor> reactors = new List<IMyReactor>();
+        readonly List<IMyPowerProducer> powerProducers = new List<IMyPowerProducer>();
 
         float max, capacity, produce, consume, maxOut, potentialCap;
 
@@ -173,10 +170,7 @@ namespace MercenaryTSS
         public void Refresh()
         {
             batteryBlocks.Clear();
-            //windTurbines.Clear();
-            hydroEngines.Clear();
-            //solarPanels.Clear();
-            //reactors.Clear();
+            powerProducers.Clear();
 
             var myCubeGrid = myTerminalBlock.CubeGrid as MyCubeGrid;
             var myFatBlocks = myCubeGrid.GetFatBlocks().Where(block => block.IsFunctional);
@@ -190,22 +184,21 @@ namespace MercenaryTSS
                 {
                     if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Wind"))
                     {
-                        //windTurbines.Add((IMyPowerProducer)myBlock);
-                        hydroEngines.Add((IMyPowerProducer)myBlock);
+                        powerProducers.Add((IMyPowerProducer)myBlock);
                     }
                     else if (myBlock.BlockDefinition.Id.SubtypeName.Contains("Hydrogen"))
                     {
-                        hydroEngines.Add((IMyPowerProducer)myBlock);
+                        powerProducers.Add((IMyPowerProducer)myBlock);
                     }
                     else if (myBlock is IMyReactor)
                     {
                         //reactors.Add((IMyReactor)myBlock);
-                        hydroEngines.Add((IMyPowerProducer)myBlock);
+                        powerProducers.Add((IMyPowerProducer)myBlock);
                     }
                     else if (myBlock is IMySolarPanel)
                     {
                         //solarPanels.Add((IMySolarPanel)myBlock);
-                        hydroEngines.Add((IMyPowerProducer)myBlock);
+                        powerProducers.Add((IMyPowerProducer)myBlock);
                     }
                 }
             }
@@ -219,8 +212,13 @@ namespace MercenaryTSS
                 else potentialCap += bat.CurrentStoredPower;
                 max += bat.MaxStoredPower;
             }
-            produce = hydroEngines.Sum(x => x.CurrentOutput);
-            consume = batteryBlocks.Sum(x => x.CurrentOutput) + hydroEngines.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
+            produce = powerProducers.Sum(x => x.CurrentOutput);
+            consume = batteryBlocks.Sum(x => x.CurrentOutput) + powerProducers.Sum(x => x.CurrentOutput) - batteryBlocks.Sum(x => x.CurrentInput);
+            if (consume < 0)
+            {
+                produce -= consume;
+                consume = 0;
+            }
             maxOut = batteryBlocks.Sum(x => x.MaxOutput);
         }
     }
