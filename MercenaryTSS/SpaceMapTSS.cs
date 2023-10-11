@@ -83,6 +83,14 @@ namespace MercenaryTSS
 
         private void Draw(ref MySpriteDrawFrame frame)
         {
+            if (TerminalBlock.CubeGrid.NaturalGravity.Y > 0)
+            {
+                sigDraw.ConvertGPS = TransformPosMirror;
+            }
+            else 
+            {
+                sigDraw.ConvertGPS = TransformPos;
+            }
             // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
             DrawBaseLayer(ref frame);
 
@@ -155,17 +163,28 @@ namespace MercenaryTSS
                 var data = "Circle";
                 var wv = ((VRage.Game.ModAPI.Ingame.IMyEntity)p).WorldVolume;
                 var pos = wv.Center;
-                var posT = TransformPos(pos);
+                var posT = sigDraw.ConvertGPS(pos);
                 float radius = (float)wv.Radius * 0.5f;
                 float rot = 0.0f;
                 Color color = Color.DarkGray.Alpha(0.5f);
                 if (p is MyPlanet)
                 {
-                    //color = surface.ScriptForegroundColor.Alpha(0.2f);
+                    if (sigDraw.ConvertGPS == TransformPos)
+                    {
+                        data = "GV_Polar_AlienS";
+                        rot = (float)Math.PI * 1.5f;
+                    }
+                    else
+                    {
+                        data = "GV_Polar_AlienN";
+                        rot = (float)Math.PI * 1.5f;
+                        //var r = posT;
+                        //r -= viewport.Center;
+                        //r.X = -r.X;
+                        //posT = r + viewport.Center;
+                    }
                     radius = (p as MyPlanet).AverageRadius;
-                    data = "GV_Polar_Alien";
                     color = Color.White.Alpha(0.1f);
-                    rot = (float)Math.PI * 1.5f;
                 }
                 else color = Color.Darken(color, 0.4);
                 var sprite = new MySprite
@@ -191,6 +210,16 @@ namespace MercenaryTSS
         {
             pos -= originOffset;
             var result = new Vector2((float)pos.X, (float)pos.Z);
+            result *= pixelPerMeter;
+            result += viewport.Center;
+
+            return result;
+        }
+
+        private Vector2 TransformPosMirror(Vector3D pos)
+        {
+            pos -= originOffset;
+            var result = new Vector2((float)-pos.X, (float)pos.Z);
             result *= pixelPerMeter;
             result += viewport.Center;
 

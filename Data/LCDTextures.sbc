@@ -26,7 +26,13 @@
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
     <LCDTextureDefinition>
-      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_Alien" />
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienN" />
+      <TexturePath>Textures\Sprites\Pole1024N.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Pole1024N.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienS" />
       <TexturePath>Textures\Sprites\Pole1024T.dds</TexturePath>
       <SpritePath>Textures\Sprites\Pole1024T.dds</SpritePath>
       <Selectable>true</Selectable>

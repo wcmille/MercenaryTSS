@@ -12,13 +12,13 @@ namespace MercenaryTSS
         readonly double minDist2 = 1000 * 1000;
         readonly float markerSize = 5.0f;
         readonly RadioUtil ru;
-        readonly Func<Vector3D, Vector2> convertGPS;
+        internal Func<Vector3D, Vector2> ConvertGPS { get; set; }
 
         public SigDraw(IMyTerminalBlock terminalBlock, Func<Vector3D, Vector2> convertGPS, float markerSize)
         {
             this.markerSize = markerSize;
             this.terminalBlock = terminalBlock;
-            this.convertGPS = convertGPS;
+            this.ConvertGPS = convertGPS;
             ru = new RadioUtil();
         }
 
@@ -37,7 +37,7 @@ namespace MercenaryTSS
                         {
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
-                            Position = convertGPS(g.Coords),
+                            Position = ConvertGPS(g.Coords),
                             Size = new Vector2(markerSize),
                             Color = g.GPSColor,
                             Alignment = TextAlignment.CENTER,
@@ -47,7 +47,7 @@ namespace MercenaryTSS
                         {
                             Type = SpriteType.TEXTURE,
                             Data = "SquareSimple",
-                            Position = convertGPS(g.Coords),
+                            Position = ConvertGPS(g.Coords),
                             Size = new Vector2(markerSize + 2),
                             Color = Color.Black,
                             Alignment = TextAlignment.CENTER,
@@ -82,7 +82,7 @@ namespace MercenaryTSS
                             else if (relation == MyRelationsBetweenPlayerAndBlock.FactionShare) color = Color.Green;
                             else color = Color.Orange;
 
-                            var pos = convertGPS(sig.BroadcastPosition);
+                            var pos = ConvertGPS(sig.BroadcastPosition);
                             var sprite = new MySprite()
                             {
                                 Type = SpriteType.TEXTURE,
