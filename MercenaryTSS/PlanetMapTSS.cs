@@ -2,6 +2,7 @@
 using Sandbox.Game.GameSystems.TextSurfaceScripts;
 using Sandbox.ModAPI;
 using System;
+using System.Linq;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
@@ -132,6 +133,11 @@ namespace MercenaryTSS
             if (planet != null)
             {
                 name = planet.Name;
+                int dashLoc = name.IndexOf('-');
+                if (dashLoc > 0)
+                {
+                    name = name.Substring(0, dashLoc);
+                }
             }
 
             // Create background sprite
@@ -153,6 +159,18 @@ namespace MercenaryTSS
                 Size = new Vector2(viewPort.Width, viewPort.Height)
             };
             frame.Add(sprite);
+
+            //sprite = new MySprite
+            //{
+            //    Type = SpriteType.TEXT,
+            //    Data = name,
+            //    Color = Color.GhostWhite,
+            //    Position = new Vector2(20f,20f),
+            //    FontId = "White",
+            //    Alignment = TextAlignment.LEFT,
+            //    RotationOrScale = 0.5f
+            //};
+            //frame.Add(sprite);
         }
 
         void DrawLoc(MySpriteDrawFrame frame, Vector2 pos)
