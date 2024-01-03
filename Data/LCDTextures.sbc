@@ -3,8 +3,8 @@
   <LCDTextures>
     <LCDTextureDefinition>
       <Id Type="LCDTextureDefinition" Subtype="GV_Zone_PertamKharak" />
-      <TexturePath>Textures\Sprites\KharakS5ZoneColors2.dds</TexturePath>
-      <SpritePath>Textures\Sprites\KharakS5ZoneColors2.dds</SpritePath>
+      <TexturePath>Textures\Sprites\KharakMercator1024.dds</TexturePath>
+      <SpritePath>Textures\Sprites\KharakMercator1024.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
     <LCDTextureDefinition>
@@ -25,6 +25,20 @@
       <SpritePath>Textures\Sprites\Alien.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
+    
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_PertamKharakN" />
+      <TexturePath>Textures\Sprites\KharakStereoNorth1024.dds</TexturePath>
+      <SpritePath>Textures\Sprites\KharakStereoNorth1024.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_PertamKharakS" />
+      <TexturePath>Textures\Sprites\KharakStereoSouth1024.dds</TexturePath>
+      <SpritePath>Textures\Sprites\KharakStereoSouth1024.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+
     <LCDTextureDefinition>
       <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienN" />
       <TexturePath>Textures\Sprites\Pole1024N.dds</TexturePath>

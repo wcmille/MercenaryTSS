@@ -169,15 +169,24 @@ namespace MercenaryTSS
                 Color color = Color.DarkGray.Alpha(0.5f);
                 if (p is MyPlanet)
                 {
+                    var name = p.Name;
+                    int dashLoc = name.IndexOf('-');
+                    if (dashLoc > 0)
+                    {
+                        name = name.Substring(0, dashLoc);
+                    }
+
                     if (sigDraw.ConvertGPS == TransformPos)
                     {
-                        data = "GV_Polar_AlienS";
-                        rot = (float)Math.PI * 1.5f;
+                        //Postitive Y
+                        data = $"GV_Polar_{name}S";
+                        rot = (float)Math.PI * 0.0f;
                     }
                     else
                     {
-                        data = "GV_Polar_AlienN";
-                        rot = (float)Math.PI * 1.5f;
+                        //Negative Y
+                        data = $"GV_Polar_{name}N";
+                        rot = (float)Math.PI * 0.0f;
                         //var r = posT;
                         //r -= viewport.Center;
                         //r.X = -r.X;
