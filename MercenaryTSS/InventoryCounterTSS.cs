@@ -28,9 +28,11 @@ namespace BMC.MercenaryTSS
         //public bool ConfigCheck = false;
         readonly MyIni config = new MyIni();
         readonly IMyTerminalBlock myTerminalBlock;
+        public float TextSize { get; private set; }
         public ConfigIt(IMyTerminalBlock mtb)
         {
             myTerminalBlock = mtb;
+            TextSize = 0.5f;
         }
         public void CreateConfig()
         {
@@ -43,6 +45,7 @@ namespace BMC.MercenaryTSS
             config.Set("Settings", "MyObjectBuilder_AmmoMagazine/LargeRailgunAmmo", "0");
             config.Set("Settings", "MyObjectBuilder_AmmoMagazine/Missile200mm", "0");
             config.Set("Settings", "MyObjectBuilder_AmmoMagazine/SmallRailgunAmmo", "0");
+            config.Set("Settings", "TextSize", "0.5");
 
             config.Invalidate();
             myTerminalBlock.CustomData = config.ToString();
@@ -57,6 +60,7 @@ namespace BMC.MercenaryTSS
                 if (config.ContainsSection("Settings"))
                 {
                     ConfigCheck = true;
+                    TextSize = (float)config.Get("Settings", "TextSize").ToDouble(TextSize);
                 }
                 else
                 {
@@ -226,7 +230,7 @@ namespace BMC.MercenaryTSS
 
                 //textSize = 1.0f;//config.Get("Settings", "TextSize").ToSingle(defaultValue: 1.0f);
                 right = new Vector2(mySurface.SurfaceSize.X - 10, 0);
-                newLine = new Vector2(0, 30 * textSize);
+                newLine = new Vector2(0, 30 * textSize * configit.TextSize);
                 myDefinitions = MyDefinitionManager.Static.GetAllDefinitions();
 
                 DrawAmmoSprite(ref myFrame, ref myPosition);
@@ -276,7 +280,7 @@ namespace BMC.MercenaryTSS
                 Type = SpriteType.TEXT,
                 Data = text,
                 Position = position,
-                RotationOrScale = textSize,
+                RotationOrScale = textSize * configit.TextSize,
                 Color = mySurface.ScriptForegroundColor,
                 Alignment = alignment,
                 FontId = "White"

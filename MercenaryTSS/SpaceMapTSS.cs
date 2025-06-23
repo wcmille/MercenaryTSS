@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using VRage.Game;
 using VRage.Game.GUI.TextPanel;
 using VRage.Game.ModAPI;
+using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.ModAPI;
 using VRage.Utils;
 using VRageMath;
@@ -18,15 +19,17 @@ namespace MercenaryTSS
         private readonly IMyTerminalBlock TerminalBlock;
         readonly RectangleF viewport;
         Vector3D originOffset = new Vector3D(131000, 5700000, 0);
-        const double scanRad = 20000;
-        readonly float pixelPerMeter = 0.0025f;
-        Vector3D scanSize = new Vector3D(scanRad, scanRad, scanRad);
+        double scanRad = 20000;
+        float pixelPerMeter = 0.0025f;
         readonly List<MyVoxelBase> planets = new List<MyVoxelBase>();
         readonly IMyTextSurface surface;
-        readonly double gridTextureSize = 1024;
-        readonly double desiredSmallSquareSize;
-        readonly double gridScale;
+        double gridTextureSize = 1024;
+        double desiredSmallSquareSize;
+        double gridScale;
         readonly SigDraw sigDraw;
+        int bigUpdate = 0;
+        const double smallSquaresInGrid = 23 * 3;
+        Vector3D scanSize; 
 
         public SpaceMapTSS(IMyTextSurface surface, IMyCubeBlock block, Vector2 size) : base(surface, block, size)
         {
@@ -35,14 +38,8 @@ namespace MercenaryTSS
 
             viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f, surface.SurfaceSize);
 
-            pixelPerMeter = (float)(viewport.Width / (2.0 * scanRad));
-            //const double gridSpriteWidth = 2048;
-            const double smallSquaresInGrid = 23 * 3;
-            //const double smallSquareSizeOnTexture = 2048.0 / (23.0 * 4.0);
             gridScale = 1000;
-            desiredSmallSquareSize = ((double)viewport.Width) / (2.0 * scanRad / gridScale); //in pixels
-            gridTextureSize = desiredSmallSquareSize * smallSquaresInGrid; //in pixels
-
+            SetValues();
             this.surface = surface;
             sigDraw = new SigDraw(TerminalBlock, TransformPos, 5.0f);
         }
@@ -59,6 +56,23 @@ namespace MercenaryTSS
         {
             try
             {
+                ++bigUpdate;
+                if (bigUpdate % 5 == 0) 
+                {
+                    bigUpdate = 0;
+                    MyIni myIni = new MyIni();
+                    if (myIni.TryParse(TerminalBlock.CustomData))
+                    {
+                        gridScale = myIni.Get("Mercenary.SpaceMap", "gridScale").ToDouble(gridScale);
+                        scanRad = myIni.Get("Mercenary.SpaceMap", "scanRadius").ToDouble(scanRad);
+                        gridScale = MathHelper.Clamp(gridScale, 300, 5000);
+                        scanRad = MathHelper.Clamp(scanRad,1000,25000);
+                        myIni.Set("Mercenary.SpaceMap", "gridScale", gridScale);
+                        myIni.Set("Mercenary.SpaceMap", "scanRadius", scanRad);
+                        TerminalBlock.CustomData = myIni.ToString();
+                        SetValues();
+                    }
+                }
                 base.Run();
                 var frame = Surface.DrawFrame();
                 try
@@ -74,6 +88,14 @@ namespace MercenaryTSS
             {
                 DrawError(e);
             }
+        }
+
+        private void SetValues()
+        {
+            scanSize = new Vector3D(scanRad, scanRad, scanRad);
+            pixelPerMeter = (float)(viewport.Width / (2.0 * scanRad));
+            desiredSmallSquareSize = ((double)viewport.Width) / (2.0 * scanRad / gridScale); //in pixels
+            gridTextureSize = desiredSmallSquareSize * smallSquaresInGrid; //in pixels
         }
 
         private void BlockMarkedForClose(IMyEntity ent)
@@ -180,13 +202,15 @@ namespace MercenaryTSS
                     {
                         //Postitive Y
                         data = $"GV_Polar_{name}S";
-                        rot = (float)Math.PI * 0.0f;
+                        if (data == "GV_Polar_AlienS") rot = (float)Math.PI * 1.5f;
+                        else rot = (float)Math.PI * 0.0f;
                     }
                     else
                     {
                         //Negative Y
                         data = $"GV_Polar_{name}N";
-                        rot = (float)Math.PI * 0.0f;
+                        if (data == "GV_Polar_AlienN") rot = (float)Math.PI * 1.5f;
+                        else rot = (float)Math.PI * 0.0f;
                         //var r = posT;
                         //r -= viewport.Center;
                         //r.X = -r.X;
