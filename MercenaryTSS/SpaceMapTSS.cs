@@ -102,13 +102,14 @@ namespace MercenaryTSS
 
         private void Draw(ref MySpriteDrawFrame frame)
         {
-            // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
-            DrawBaseLayer(ref frame);
-
             originOffset = TerminalBlock.GetPosition();
-            //sigDraw.ConvertGPS = 
-            voxDraw.Select(originOffset, TerminalBlock.CubeGrid.NaturalGravity);
+            float ngm;
+            var grav = MyAPIGateway.GravityProviderSystem.CalculateNaturalGravityInPoint(TerminalBlock.GetPosition(), out ngm);
+            voxDraw.Select(originOffset, grav);
+
+            // Therefore this guide applies: https://github.com/malware-dev/MDK-SE/wiki/Text-Panels-and-Drawing-Sprites
             voxDraw.DrawVox(ref frame);
+            DrawBaseLayer(ref frame);
             sigDraw.DrawGPS(ref frame);
             sigDraw.DrawSigs(ref frame);
 
@@ -136,7 +137,7 @@ namespace MercenaryTSS
                 Data = "Grid",
                 Size = new Vector2((float)gridTextureSize),
                 Alignment = TextAlignment.LEFT,
-                Color = surface.ScriptForegroundColor.Alpha(0.25f),
+                Color = surface.ScriptForegroundColor.Alpha(1.0f),
                 Position = drawPoint,
             };
             frame.Add(sprite);
@@ -147,7 +148,7 @@ namespace MercenaryTSS
                 Data = "Grid",
                 Size = new Vector2((float)gridTextureSize),
                 Alignment = TextAlignment.RIGHT,
-                Color = surface.ScriptForegroundColor.Alpha(0.25f),
+                Color = surface.ScriptForegroundColor.Alpha(1.0f),
                 Position = drawPoint,
             };
 
@@ -158,7 +159,7 @@ namespace MercenaryTSS
                 Data = "CircleHollow",
                 Size = new Vector2(32),
                 Alignment = TextAlignment.CENTER,
-                Color = surface.ScriptForegroundColor.Alpha(0.25f),
+                Color = surface.ScriptForegroundColor.Alpha(1.0f),
                 //Position = drawPoint,
             };
             frame.Add(sprite);

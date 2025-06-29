@@ -25,12 +25,30 @@ namespace MercenaryTSS
 
         IDrawPlanet ClosestPlanet { get; set; }
 
+        static int Partition<T>(List<T> list, Func<T, bool> predicate)
+        {
+            int i = 0;
+            for (int j = 0; j < list.Count; j++)
+            {
+                if (predicate(list[j]))
+                {
+                    // Manual swap using a temp variable
+                    T temp = list[i];
+                    list[i] = list[j];
+                    list[j] = temp;
+                    i++;
+                }
+            }
+            return i; // index of the partition point
+        }
+
         public Func<Vector3D, Vector2> Select(Vector3D originOffst, Vector3D grav)
         {
             originOffset = originOffst;
             var box = new BoundingBoxD(originOffset - ScanSize, originOffset + ScanSize);
             voxels.Clear();
             MyGamePruningStructure.GetAllVoxelMapsInBox(ref box, voxels);
+            Partition(voxels, (x)=> { return !(x is MyPlanet); });
             //TODO: Only works for one planet.
             foreach (var v in voxels)
             {
@@ -57,7 +75,7 @@ namespace MercenaryTSS
         public Vector2 TransformPos(Vector3D pos)
         {
             pos -= originOffset;
-            var result = (ClosestPlanet == null) ? new Vector2((float)pos.X, (float)pos.Y) : ClosestPlanet.Transform2D(pos);
+            var result = (ClosestPlanet == null) ? new Vector2((float)pos.X, (float)pos.Z) : ClosestPlanet.Transform2D(pos);
             result = -result;
             result *= PixelPerMeter;
             result += ViewportCenter;
@@ -81,7 +99,7 @@ namespace MercenaryTSS
                 if (v is MyPlanet)
                 {
                     radius = (v as MyPlanet).AverageRadius;
-                    color = Color.White.Alpha(0.1f);
+                    color = Color.White.Alpha(0.75f);
                     data = ClosestPlanet.Data;
                     //rot = (float)Math.PI * 0.5f;
                 }
