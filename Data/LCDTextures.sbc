@@ -51,5 +51,30 @@
       <SpritePath>Textures\Sprites\Pole1024T.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
+    <!-- Right and Left are switched. I'm not sure why that works.-->
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienNx" />
+      <TexturePath>Textures\Sprites\Alien_right.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Alien_right.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienPx" />
+      <TexturePath>Textures\Sprites\Alien_left.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Alien_left.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienNz" />
+      <TexturePath>Textures\Sprites\Alien_front.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Alient_front.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
+    <LCDTextureDefinition>
+      <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienPz" />
+      <TexturePath>Textures\Sprites\Alien_back.dds</TexturePath>
+      <SpritePath>Textures\Sprites\Alien_back.dds</SpritePath>
+      <Selectable>true</Selectable>
+    </LCDTextureDefinition>
   </LCDTextures>
 </Definitions>

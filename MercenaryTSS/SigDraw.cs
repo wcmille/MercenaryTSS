@@ -12,7 +12,7 @@ namespace MercenaryTSS
         readonly double minDist2 = 1000 * 1000;
         readonly float markerSize = 5.0f;
         readonly RadioUtil ru;
-        internal Func<Vector3D, Vector2> ConvertGPS { get; set; }
+        private Func<Vector3D, Vector2> ConvertGPS { get; set; }
 
         public SigDraw(IMyTerminalBlock terminalBlock, Func<Vector3D, Vector2> convertGPS, float markerSize)
         {
