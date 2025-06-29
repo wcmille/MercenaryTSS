@@ -197,7 +197,7 @@ namespace MercenaryTSS
         {
             return new Vector2
             {
-                X = (float)((viewport.Width / 2.0f + viewport.Width / 2.0f * -Math.Atan2(location.X, location.Z) / Math.PI) + viewport.X),
+                X = (float)((viewport.Width / 2.0f + viewport.Width / 2.0f * -Math.Atan2(-location.X, -location.Z) / Math.PI) + viewport.X),
                 Y = (float)((viewport.Height / 2.0f - viewport.Height * Math.Atan2(-location.Y, Math.Sqrt(location.X * location.X + location.Z * location.Z)) / Math.PI) + viewport.Y)
             };
         }
