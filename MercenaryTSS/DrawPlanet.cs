@@ -76,7 +76,7 @@ namespace MercenaryTSS
         {
             pos -= originOffset;
             var result = (ClosestPlanet == null) ? new Vector2((float)pos.X, (float)pos.Z) : ClosestPlanet.Transform2D(pos);
-            result = -result;
+            //result = -result;
             result *= PixelPerMeter;
             result += ViewportCenter;
 
@@ -101,7 +101,7 @@ namespace MercenaryTSS
                     radius = (v as MyPlanet).AverageRadius;
                     color = Color.White.Alpha(0.75f);
                     data = ClosestPlanet.Data;
-                    //rot = (float)Math.PI * 0.5f;
+                    rot = (float)Math.PI * 1.0f;
                 }
                 else color = Color.Darken(color, 0.4);
                 var sprite = new MySprite
