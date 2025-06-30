@@ -20,7 +20,7 @@ namespace MercenaryTSS
             this.PixelPerMeter = 0.0025f;
             planets.Add("Alien", new MapW6Pix("Alien"));
             planets.Add("Kharak", new MapW2Pix("Kharak"));
-            //Initialize Planets that have data.
+            ClosestPlanet = new MyDefaultPlanet();
         }
 
         IDrawPlanet ClosestPlanet { get; set; }
