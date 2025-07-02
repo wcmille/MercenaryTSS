@@ -67,7 +67,7 @@
     <LCDTextureDefinition>
       <Id Type="LCDTextureDefinition" Subtype="GV_Polar_AlienNz" />
       <TexturePath>Textures\Sprites\Alien_front.dds</TexturePath>
-      <SpritePath>Textures\Sprites\Alient_front.dds</SpritePath>
+      <SpritePath>Textures\Sprites\Alien_front.dds</SpritePath>
       <Selectable>true</Selectable>
     </LCDTextureDefinition>
     <LCDTextureDefinition>
